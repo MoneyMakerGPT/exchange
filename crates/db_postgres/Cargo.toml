@@ -1,0 +1,15 @@
+[package]
+name = "db_postgres"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-web.workspace = true
+confik.workspace = true
+deadpool-postgres.workspace = true
+derive_more.workspace = true
+dotenvy.workspace = true
+serde.workspace = true
+tokio-pg-mapper.workspace = true
+tokio-pg-mapper-derive.workspace = true
+tokio-postgres.workspace = true
