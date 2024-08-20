@@ -5,7 +5,10 @@ edition = "2021"
 
 [dependencies]
 actix-web.workspace = true
+confik.workspace = true
 deadpool-postgres.workspace = true
+dotenvy.workspace = true
+env_logger.workspace = true
 
 common_utils = { path = "../common_utils" }
 db_postgres = { path = "../db_postgres" }
