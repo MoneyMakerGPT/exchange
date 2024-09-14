@@ -1,12 +1,12 @@
 use actix_web::{web, App, Error, HttpResponse, HttpServer};
 use deadpool_postgres::Client;
 use dotenvy::dotenv;
-
-use db_postgres::{get_db_pool, models::User, db, errors::DbError};
 use confik::{Configuration as _, EnvSource};
 
-use crate::config::RouterConfig;
+use db_postgres::{get_db_pool, models::User, db, errors::DbError};
+use redis::{enqueue_message, dequeue_message, publish_message, subscribe_to_channel};
 
+use crate::config::RouterConfig;
 pub mod config;
 
 pub async fn get_users() -> Result<HttpResponse, Error> {
@@ -27,6 +27,30 @@ pub async fn add_user(user: web::Json<User>) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().json(new_user))
 }
 
+pub async fn get_message() -> Result<HttpResponse, Error> {
+    let message = dequeue_message().await?;
+
+    Ok(HttpResponse::Ok().json(message))
+}
+
+pub async fn post_message() -> Result<HttpResponse, Error> {
+    let message = enqueue_message().await?;
+
+    Ok(HttpResponse::Ok().json(message))
+}
+
+pub async fn publish() -> Result<HttpResponse, Error> {
+    let message = publish_message().await?;
+
+    Ok(HttpResponse::Ok().json(message))
+}
+
+pub async fn subscribe() -> Result<HttpResponse, Error> {
+    let message = subscribe_to_channel().await?;
+
+    Ok(HttpResponse::Ok().json(message))
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "debug");
@@ -41,9 +65,17 @@ async fn main() -> std::io::Result<()> {
     let server = HttpServer::new(move || {
         App::new()
                 .service(web::resource("/users")
-                .route(web::post().to(add_user))
-                .route(web::get().to(get_users)),
-        )
+                    .route(web::post().to(add_user))
+                    .route(web::get().to(get_users))
+                )
+                .service(web::resource("/redis")
+                    .route(web::post().to(post_message))
+                    .route(web::get().to(get_message))
+                )
+                .service(web::resource("/pubsub")
+                    .route(web::post().to(publish))
+                    .route(web::get().to(subscribe))
+                )
     })
     .bind(config.server_addr.clone())?
     .run();

@@ -12,4 +12,5 @@ env_logger.workspace = true
 
 common_utils = { path = "../common_utils" }
 db_postgres = { path = "../db_postgres" }
+redis = { path = "../redis" }
 

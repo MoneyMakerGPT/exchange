@@ -9,6 +9,7 @@ deadpool-postgres = { version = "0.12", features = ["serde"] }
 derive_more = "0.99.7"
 dotenvy = "0.15"
 env_logger = "0.10.0"
+redis = { version = "0.25", features = ["tokio-comp", "connection-manager"] }
 serde = { version = "1", features = ["derive"] }
 tokio-pg-mapper = "0.2.0"
 tokio-pg-mapper-derive = "0.2.0"

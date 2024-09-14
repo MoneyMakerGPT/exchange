@@ -1,0 +1,9 @@
+[package]
+name = "redis"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-web.workspace = true
+redis.workspace = true
+serde.workspace = true
