@@ -1,90 +1,85 @@
-use actix_web::error;
+use fred::{clients::SubscriberClient, prelude::*};
 
-pub async fn enqueue_message() -> actix_web::Result<String> {
-    let redis_client = redis::Client::open("redis://127.0.0.1:6380/").unwrap();
+pub struct RedisManager {
+    client: RedisClient,
+    publisher: RedisClient,
+    subscriber: SubscriberClient,
+}
 
-    let mut conn = redis_client
-        .get_connection_manager()
-        .await
-        .map_err(error::ErrorInternalServerError)?;
+impl RedisManager {
+    async fn new() -> Result<Self, RedisError> {
+        let client = Builder::default_centralized().build()?;
+        let publisher = Builder::default_centralized().build()?;
+        let subscriber = Builder::default_centralized().build_subscriber_client()?;
 
-    let res: isize = redis::cmd("LPUSH")
-        .arg("my_queue")
-        .arg("hello")
-        .query_async(&mut conn)
-        .await
-        .map_err(error::ErrorInternalServerError)?;
+        client.init().await?;
+        publisher.init().await?;
+        subscriber.init().await?;
 
-    if res > 0 {
-        Ok("Message enqueued successfully".to_string())
-    } else {
-        Err(error::ErrorInternalServerError("Failed to enqueue message"))
+        Ok(Self {
+            client,
+            publisher,
+            subscriber,
+        })
+    }
+
+    async fn push(&self, key: &str, value: i64) -> Result<(), RedisError> {
+        self.client.lpush(key, value).await
+    }
+
+    async fn pop(&self, key: &str, count: Option<usize>) -> Result<Vec<RedisValue>, RedisError> {
+        self.client.rpop(key, count).await
+    }
+
+    async fn publish(&self, channel: &str, value: i64) -> Result<(), RedisError> {
+        self.publisher.publish(channel, value).await
+    }
+
+    async fn subscribe(&self, channel: &str) -> Result<(), RedisError> {
+        self.subscriber.subscribe(channel).await
     }
 }
 
-pub async fn dequeue_message() -> actix_web::Result<String> {
-    let redis_client = redis::Client::open("redis://127.0.0.1:6380/").unwrap();
+// Example usage:
 
-    let mut conn = redis_client
-        .get_connection_manager()
-        .await
-        .map_err(error::ErrorInternalServerError)?;
+// ----------------------------------------
+// QUEUE
+// ----------------------------------------
 
-    let res: Option<(String, String)> = redis::cmd("BRPOP")
-        .arg("my_queue")
-        .arg(0) // Block indefinitely
-        .query_async(&mut conn)
-        .await
-        .map_err(error::ErrorInternalServerError)?;
+// let client = Builder::default_centralized().build()?;
+// client.init().await?;
 
-    match res {
-        Some((_, message)) => Ok(message),
-        None => Err(error::ErrorInternalServerError("Failed to dequeue message"))
-    }
-}
+// // Ensure the key is cleared first to avoid type conflicts
+// client.del("foo").await?;
+// client.lpush("foo", 111).await?;
 
-pub async fn publish_message() -> actix_web::Result<String> {
-    let redis_client = redis::Client::open("redis://127.0.0.1:6380/").unwrap();
-    
-    let mut conn = redis_client
-        .get_connection_manager()
-        .await
-        .map_err(error::ErrorInternalServerError)?;
+// let value: Vec<RedisValue> = client.rpop("foo", Some(2)).await?;
+// println!("RPOP Value: {:?}", value);
+// client.quit().await?;
+// Ok(())
 
-    let _: () = redis::cmd("PUBLISH")
-        .arg("channel1") // channel name
-        .arg("message1") // message
-        .query_async(&mut conn)
-        .await
-        .map_err(actix_web::error::ErrorInternalServerError)?;
+// ----------------------------------------
+// PUBSUB
+// ----------------------------------------
+// let publisher_client = Builder::default_centralized().build()?;
+// let subscriber_client = Builder::default_centralized().build_subscriber_client()?;
+// publisher_client.init().await?;
+// subscriber_client.init().await?;
 
-    Ok("Message published successfully".to_string())
-}
+// // Subscribe to the "foo" channel
+// subscriber_client.subscribe("foo").await?;
 
-pub async fn subscribe_to_channel() -> actix_web::Result<String> {
-    let redis_client = redis::Client::open("redis://127.0.0.1:6380/").unwrap();
-    
-    let mut conn = redis_client
-        .get_async_connection()
-        .await
-        .map_err(actix_web::error::ErrorInternalServerError)?;
+// // or use `message_rx()` to use the underlying `BroadcastReceiver` directly without spawning a new task
+// let _message_task = subscriber_client.on_message(|message| {
+//     println!("{}: {}", message.channel, message.value.convert::<i64>()?);
+//     Ok::<_, RedisError>(())
+// });
 
-    let mut pubsub_conn = conn.into_pubsub();
-    pubsub_conn
-        .subscribe("channel1")
-        .await
-        .map_err(actix_web::error::ErrorInternalServerError)?;
-    
-    let messages = pubsub_conn
-        .into_on_message() // This creates a stream of messages
-        .map(|msg| msg.get_payload::<String>())
-        .filter_map(|result| async move { result.ok() })
-        .map(|result| result.unwrap());
+// for idx in 0 .. 50 {
+//     publisher_client.publish("foo", idx).await?;
+//     sleep(Duration::from_secs(1)).await;
+// }
 
-    if let Some(message) = messages.next().await {
-        let payload: String = message.get_payload().map_err(actix_web::error::ErrorInternalServerError)?;
-        Ok(format!("Received message: {}", payload))
-    } else {
-        Err(actix_web::error::ErrorInternalServerError("Failed to receive message"))
-    }
-}
+// publisher_client.quit().await?;
+// subscriber_client.quit().await?;
+// Ok(())
