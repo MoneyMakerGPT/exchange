@@ -1,13 +1,18 @@
-use actix_web::{web, App, Error, HttpResponse, HttpServer};
+use actix_web::{
+    web::{self, scope},
+    App, HttpResponse, HttpServer,
+};
 use confik::{Configuration as _, EnvSource};
 use dotenvy::dotenv;
 
-use crate::config::RouterConfig;
 pub mod config;
+pub mod routes;
+pub mod types;
+use crate::config::RouterConfig;
+use crate::routes::order;
+use crate::types::app::AppState;
 
-pub async fn get_route() -> Result<HttpResponse, Error> {
-    Ok(HttpResponse::Ok().json("Hello world!"))
-}
+use redis::RedisManager;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -20,10 +25,17 @@ async fn main() -> std::io::Result<()> {
         .try_build()
         .unwrap();
 
-    // println!("env var: {}", std::env::var("DATABASE_URL").unwrap());
+    let app_state = web::Data::new(AppState {
+        redis_connection: RedisManager::new().await.unwrap(),
+    });
 
     let server = HttpServer::new(move || {
-        App::new().service(web::resource("/users").route(web::get().to(get_route)))
+        App::new().service(
+            scope("/api/v1")
+                .app_data(app_state.clone())
+                .service(web::resource("/users").route(web::get().to(HttpResponse::Ok)))
+                .service(web::resource("/orders").route(web::get().to(order::execute_order))),
+        )
     })
     .bind(config.server_addr.clone())?
     .run();

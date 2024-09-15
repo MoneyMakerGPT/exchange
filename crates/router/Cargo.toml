@@ -8,6 +8,10 @@ actix-web.workspace = true
 confik.workspace = true
 dotenvy.workspace = true
 env_logger.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+rust_decimal.workspace = true
+uuid.workspace = true
 
 common_utils = { path = "../common_utils" }
 sqlx_postgres = { path = "../sqlx_postgres" }

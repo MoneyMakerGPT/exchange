@@ -7,7 +7,7 @@ pub struct RedisManager {
 }
 
 impl RedisManager {
-    async fn new() -> Result<Self, RedisError> {
+    pub async fn new() -> Result<Self, RedisError> {
         let client = Builder::default_centralized().build()?;
         let publisher = Builder::default_centralized().build()?;
         let subscriber = Builder::default_centralized().build_subscriber_client()?;
@@ -23,19 +23,19 @@ impl RedisManager {
         })
     }
 
-    async fn push(&self, key: &str, value: i64) -> Result<(), RedisError> {
+    pub async fn push(&self, key: &str, value: String) -> Result<(), RedisError> {
         self.client.lpush(key, value).await
     }
 
-    async fn pop(&self, key: &str, count: Option<usize>) -> Result<Vec<RedisValue>, RedisError> {
+    pub async fn pop(&self, key: &str, count: Option<usize>) -> Result<Vec<RedisValue>, RedisError> {
         self.client.rpop(key, count).await
     }
 
-    async fn publish(&self, channel: &str, value: i64) -> Result<(), RedisError> {
+    pub async fn publish(&self, channel: &str, value: String) -> Result<(), RedisError> {
         self.publisher.publish(channel, value).await
     }
 
-    async fn subscribe(&self, channel: &str) -> Result<(), RedisError> {
+    pub async fn subscribe(&self, channel: &str) -> Result<(), RedisError> {
         self.subscriber.subscribe(channel).await
     }
 }
