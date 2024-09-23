@@ -1,5 +1,6 @@
 pub mod engine;
 pub mod orderbook;
+pub mod error;
 
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};

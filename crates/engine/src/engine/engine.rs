@@ -38,25 +38,6 @@ pub struct Engine {
     balances: HashMap<String, Mutex<UserBalances>>,
 }
 
-impl Clone for Engine {
-    fn clone(&self) -> Engine {
-        Engine {
-            // Clone orderbooks (assuming `OrderBook` is `Clone`)
-            orderbooks: self.orderbooks.clone(),
-
-            // Manually clone `balances` by cloning the inner data of the `Mutex`
-            balances: self
-                .balances
-                .iter()
-                .map(|(k, v)| {
-                    let cloned_user_balance = v.lock().unwrap().clone(); // Clone the `UserBalances`
-                    (k.clone(), Mutex::new(cloned_user_balance)) // Wrap the cloned data back in a `Mutex`
-                })
-                .collect(),
-        }
-    }
-}
-
 impl Engine {
     pub fn new() -> Engine {
         Engine {
