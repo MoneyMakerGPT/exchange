@@ -3,60 +3,15 @@ use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub enum Asset {
-    USDT,
-    BTC,
-    ETH,
-    SOL,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum OrderSide {
-    BUY,
-    SELL,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum OrderType {
-    LIMIT,
-    MARKET,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum OrderStatus {
-    Pending,
-    Filled,
-    PartiallyFilled,
-    Cancelled,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct AssetPair {
-    base: Asset,
-    quote: Asset,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Order {
-    price: Decimal,
-    quantity: Decimal,
-    filled_quantity: Decimal,
-    order_id: String,
-    user_id: String,
-    side: OrderSide,
-    order_type: OrderType,
-    order_status: OrderStatus,
-    timestamp: u64, // chrono::Utc::now().timestamp_millis();
-}
+use crate::engine::{AssetPair, Order, OrderSide};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Fill {
-    price: Decimal,
-    quantity: Decimal,
-    trade_id: u64,
-    other_user_id: String,
-    order_id: String,
+    pub price: Decimal,
+    pub quantity: Decimal,
+    pub trade_id: u64,
+    pub other_user_id: String,
+    pub order_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -91,6 +46,10 @@ impl OrderBook {
             trade_id: 0,
             last_update_id: 0,
         }
+    }
+
+    pub fn ticker(&self) -> String {
+        format!("{:?}_{:?}", self.asset_pair.base, self.asset_pair.quote)
     }
 
     pub fn process_order(&mut self, mut order: Order) -> ProcessOrderResult {

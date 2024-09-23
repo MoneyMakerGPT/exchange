@@ -67,7 +67,7 @@
        quantity: Decimal,
        filled_quantity: Decimal,
        price: Decimal,
-       timestamp: u64,
+       timestamp: i64,
      }
      ```
 
