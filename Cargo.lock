@@ -752,9 +752,12 @@ name = "engine"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "fred",
+ "redis",
  "rust_decimal",
  "rust_decimal_macros",
  "serde",
+ "serde_json",
  "tokio",
 ]
 

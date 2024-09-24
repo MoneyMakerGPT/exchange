@@ -7,6 +7,7 @@ use std::sync::Mutex;
 
 use super::{orderbook::ProcessOrderResult, Asset, Order, OrderSide, OrderStatus, OrderType};
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateOrder {
     market: String,
     price: Decimal,
@@ -46,6 +47,47 @@ impl Engine {
         }
     }
 
+    pub fn init_engine(&mut self) {
+        let orderbook = OrderBook::new(super::AssetPair {
+            base: Asset::BTC,
+            quote: Asset::USDT,
+        });
+
+        self.orderbooks.push(orderbook);
+    }
+
+    pub fn init_user_balance(&mut self, user_id: &str) {
+        let initial_balances = UserBalances {
+            user_id: user_id.to_string(),
+            balance: HashMap::new(),
+        };
+
+        // Add dummy values for USDT and BTC
+        let usdt_balance = Amount {
+            available: Decimal::new(1000, 2), // Dummy value: 1000 USDT (2 decimal places)
+            locked: Decimal::new(0, 2),       // 0 locked
+        };
+
+        let btc_balance = Amount {
+            available: Decimal::new(2, 1), // Dummy value: 2 BTC (8 decimal places)
+            locked: Decimal::new(0, 1),    // 0 locked
+        };
+
+        // Initialize the balance HashMap for the user
+        let mut balances_map = initial_balances.balance;
+        balances_map.insert(Asset::USDT, usdt_balance);
+        balances_map.insert(Asset::BTC, btc_balance);
+
+        // Add the initialized UserBalances to the Engine's balances map
+        self.balances.insert(
+            user_id.to_string(),
+            Mutex::new(UserBalances {
+                user_id: user_id.to_string(),
+                balance: balances_map,
+            }),
+        );
+    }
+
     pub fn create_order(&mut self, input_order: CreateOrder) -> Result<(), &str> {
         self.check_and_lock_funds(&input_order)
             .expect("Funds check failed");
@@ -73,6 +115,8 @@ impl Engine {
         };
 
         let order_result: ProcessOrderResult = orderbook.process_order(order.clone());
+        println!("Current orderbook bids {:?}", orderbook.bids);
+        println!("Current orderbook asks {:?}", orderbook.asks);
 
         self.update_user_balance(base_asset, quote_asset, order.clone(), order_result)
     }

@@ -30,10 +30,10 @@ pub struct ProcessOrderResult {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OrderBook {
-    bids: BTreeMap<Decimal, Vec<Order>>,
-    asks: BTreeMap<Decimal, Vec<Order>>,
-    asset_pair: AssetPair,
-    trade_id: u64,
+    pub bids: BTreeMap<Decimal, Vec<Order>>,
+    pub asks: BTreeMap<Decimal, Vec<Order>>,
+    pub asset_pair: AssetPair,
+    pub trade_id: u64,
     last_update_id: u64,
 }
 

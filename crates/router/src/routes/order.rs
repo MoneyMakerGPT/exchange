@@ -7,14 +7,19 @@ use uuid::Uuid;
 
 use crate::types::app::AppState;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum OrderSide {
+    BUY,
+    SELL,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct OrderInput {
-    symbol: String,
-    side: String,
-    order_type: String,
-    quantity: Decimal,
+    market: String,
     price: Decimal,
-    client_id: String,
+    quantity: Decimal,
+    side: OrderSide,
+    user_id: String,
 }
 
 pub async fn execute_order(

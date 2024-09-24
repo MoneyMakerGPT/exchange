@@ -28,8 +28,8 @@ impl Asset {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AssetPair {
-    base: Asset,
-    quote: Asset,
+    pub base: Asset,
+    pub quote: Asset,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
