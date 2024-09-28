@@ -121,6 +121,83 @@ impl Engine {
         self.update_user_balance(base_asset, quote_asset, order.clone(), order_result)
     }
 
+    pub fn cancel_order(&mut self, cancel_order: CancelOrder) -> Result<(), &str> {
+        let orderbook = self
+            .orderbooks
+            .iter_mut()
+            .find(|orderbook| orderbook.ticker() == cancel_order.market)
+            .expect("No matching orderbook found!");
+
+        let assets: Vec<&str> = cancel_order.market.split('_').collect();
+        let base_asset_str = assets[0];
+        let quote_asset_str = assets[1];
+        let base_asset = Asset::from_str(base_asset_str)?;
+        let quote_asset = Asset::from_str(quote_asset_str)?;
+
+        let result = orderbook.cancel_order(cancel_order);
+
+        match result {
+            Ok(order) => {
+                let quantity = match order.side {
+                    OrderSide::BUY => (order.quantity - order.filled_quantity) * order.price,
+                    OrderSide::SELL => order.quantity - order.filled_quantity,
+                };
+
+                match order.side {
+                    OrderSide::BUY => {
+                        self.update_balance_with_lock(
+                            order.user_id.clone(),
+                            quote_asset.clone(),
+                            quantity,
+                            AmountType::AVAILABLE,
+                        )?;
+
+                        self.update_balance_with_lock(
+                            order.user_id.clone(),
+                            quote_asset.clone(),
+                            -quantity,
+                            AmountType::LOCKED,
+                        )?;
+                    }
+
+                    OrderSide::SELL => {
+                        self.update_balance_with_lock(
+                            order.user_id.clone(),
+                            base_asset.clone(),
+                            quantity,
+                            AmountType::AVAILABLE,
+                        )?;
+
+                        self.update_balance_with_lock(
+                            order.user_id.clone(),
+                            base_asset.clone(),
+                            -quantity,
+                            AmountType::LOCKED,
+                        )?;
+                    }
+                }
+            }
+
+            Err(()) => {
+                println!("Failed to cancel order")
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn get_open_orders(&mut self, open_orders: GetOpenOrders) -> Vec<&Order> {
+        let orderbook = self
+            .orderbooks
+            .iter_mut()
+            .find(|orderbook| orderbook.ticker() == open_orders.market)
+            .expect("No matching orderbook found!");
+
+        let open_orders: Vec<&Order> = orderbook.get_open_orders(open_orders.user_id);
+
+        open_orders
+    }
+
     pub fn check_and_lock_funds(&mut self, order: &CreateOrder) -> Result<(), &str> {
         let assets: Vec<&str> = order.market.split('_').collect();
         let base_asset_str = assets[0];

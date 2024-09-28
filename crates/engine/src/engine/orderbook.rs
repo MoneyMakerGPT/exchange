@@ -158,15 +158,16 @@ impl OrderBook {
             .collect()
     }
 
-    pub fn cancel_order(&mut self, cancel_order: CancelOrder) -> Result<(), ()> {
+    pub fn cancel_order(&mut self, cancel_order: CancelOrder) -> Result<Order, ()> {
         let cancel = |orders_map: &mut BTreeMap<Decimal, Vec<Order>>| {
             if let Some(orders) = orders_map.get_mut(&cancel_order.price) {
                 if let Some(index) = orders
                     .iter()
                     .position(|order| order.order_id == cancel_order.order_id)
                 {
+                    let order = orders.get(index).unwrap().clone();
                     orders.remove(index);
-                    Ok(())
+                    Ok(order)
                 } else {
                     Err(())
                 }
