@@ -9,23 +9,39 @@ use crate::types::{
     routes::{CancelOrderInput, CreateOrderInput, GetOpenOrdersInput, OrderRequests},
 };
 
+use redis::RedisQueues;
+
 pub async fn execute_order(
     body: Json<CreateOrderInput>,
     app_state: Data<AppState>,
 ) -> actix_web::HttpResponse {
     let starttime = Instant::now();
-    let order_id = Uuid::new_v4();
+    let mut order = body.into_inner();
+    let pubsub_id = Some(Uuid::new_v4());
+    order.pubsub_id = pubsub_id;
 
-    let order = body.into_inner();
     let create_order_request = OrderRequests::CreateOrder(order);
     let create_order_data = to_string(&create_order_request).unwrap();
     println!("Create Order: {}", create_order_data);
 
     let redis_connection = &app_state.redis_connection;
-    redis_connection
-        .push("orders", create_order_data)
-        .await
-        .unwrap();
+
+    if let Some(pubsub_id_value) = pubsub_id {
+        let result = redis_connection
+            .push_and_wait_for_subscriber(
+                RedisQueues::ORDERS.to_string(),
+                create_order_data,
+                pubsub_id_value,
+            )
+            .await;
+
+        match result {
+            Ok(()) => {}
+            Err(e) => {
+                println!("Failed to get created order from redis - {}", e);
+            }
+        }
+    }
 
     println!("Time: {:?}", starttime.elapsed());
     actix_web::HttpResponse::Ok().finish()
@@ -36,18 +52,31 @@ pub async fn cancel_order(
     app_state: Data<AppState>,
 ) -> actix_web::HttpResponse {
     let starttime = Instant::now();
-    let order_id = Uuid::new_v4();
+    let mut order = body.into_inner();
+    let pubsub_id = Some(Uuid::new_v4());
+    order.pubsub_id = pubsub_id;
 
-    let order = body.into_inner();
     let cancel_order_request = OrderRequests::CancelOrder(order);
     let cancel_order_data = to_string(&cancel_order_request).unwrap();
     println!("Cancel Order: {}", cancel_order_data);
 
     let redis_connection = &app_state.redis_connection;
-    redis_connection
-        .push("orders", cancel_order_data)
-        .await
-        .unwrap();
+    if let Some(pubsub_id_value) = pubsub_id {
+        let result = redis_connection
+            .push_and_wait_for_subscriber(
+                RedisQueues::ORDERS.to_string(),
+                cancel_order_data,
+                pubsub_id_value,
+            )
+            .await;
+
+        match result {
+            Ok(()) => {}
+            Err(e) => {
+                println!("Failed to get cancelled order from redis - {}", e);
+            }
+        }
+    }
 
     println!("Time: {:?}", starttime.elapsed());
 
@@ -59,18 +88,31 @@ pub async fn get_open_orders(
     app_state: Data<AppState>,
 ) -> actix_web::HttpResponse {
     let starttime = Instant::now();
-    let order_id = Uuid::new_v4();
+    let mut order = body.into_inner();
+    let pubsub_id = Some(Uuid::new_v4());
+    order.pubsub_id = pubsub_id;
 
-    let order = body.into_inner();
     let get_open_orders_request = OrderRequests::GetOpenOrders(order);
     let get_open_orders_data = to_string(&get_open_orders_request).unwrap();
     println!("Get Open Orders: {}", get_open_orders_data);
 
     let redis_connection = &app_state.redis_connection;
-    redis_connection
-        .push("orders", get_open_orders_data)
-        .await
-        .unwrap();
+    if let Some(pubsub_id_value) = pubsub_id {
+        let result = redis_connection
+            .push_and_wait_for_subscriber(
+                RedisQueues::ORDERS.to_string(),
+                get_open_orders_data,
+                pubsub_id_value,
+            )
+            .await;
+
+        match result {
+            Ok(()) => {}
+            Err(e) => {
+                println!("Failed to get open orders from redis - {}", e);
+            }
+        }
+    }
 
     println!("Time: {:?}", starttime.elapsed());
 

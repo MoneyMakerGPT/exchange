@@ -3,7 +3,7 @@ pub mod types;
 
 use engine::engine::Engine;
 use fred::prelude::RedisValue;
-use redis::RedisManager;
+use redis::{RedisManager, RedisQueues};
 use serde_json::from_str;
 use types::engine::OrderRequests;
 
@@ -17,7 +17,10 @@ async fn main() {
     engine.init_user_balance("random_id");
 
     loop {
-        match redis_connection.pop("orders", Some(1)).await {
+        match redis_connection
+            .pop(RedisQueues::ORDERS.to_string().as_str(), Some(1))
+            .await
+        {
             Ok(data) => {
                 if data.len() > 0 {
                     let order_to_process = &data[0];
@@ -40,10 +43,17 @@ async fn main() {
                         Ok(order) => match order {
                             OrderRequests::CreateOrder(order) => {
                                 println!("Create Order: {:?}", order);
+                                let pubsub_id = order.pubsub_id.unwrap().to_string();
+                                let pubsub_id_ref = pubsub_id.as_str();
+
                                 let create_order_result = engine.create_order(order);
 
                                 match create_order_result {
                                     Ok(()) => {
+                                        let _ = redis_connection
+                                            .publish(pubsub_id_ref, String::from("Created Order"))
+                                            .await;
+
                                         println!("Successfully placed order!")
                                     }
                                     Err(str) => {
@@ -54,10 +64,16 @@ async fn main() {
 
                             OrderRequests::CancelOrder(cancel_order) => {
                                 println!("Cancel Order: {:?}", cancel_order);
+                                let pubsub_id = cancel_order.pubsub_id.unwrap().to_string();
+                                let pubsub_id_ref = pubsub_id.as_str();
+
                                 let cancel_order_result = engine.cancel_order(cancel_order);
 
                                 match cancel_order_result {
                                     Ok(()) => {
+                                        let _ = redis_connection
+                                            .publish(pubsub_id_ref, String::from("Cancelled Order"))
+                                            .await;
                                         println!("Successfully cancelled order!")
                                     }
                                     Err(str) => {
@@ -68,8 +84,14 @@ async fn main() {
 
                             OrderRequests::GetOpenOrders(open_orders) => {
                                 println!("Open Order: {:?}", open_orders);
+                                let pubsub_id = open_orders.pubsub_id.unwrap().to_string();
+                                let pubsub_id_ref = pubsub_id.as_str();
+
                                 let open_orders_vec = engine.get_open_orders(open_orders);
 
+                                let _ = redis_connection
+                                    .publish(pubsub_id_ref, String::from("Open Orders Retrieved"))
+                                    .await;
                                 println!(
                                     "Successfully retrieved open orders! {:?}",
                                     open_orders_vec

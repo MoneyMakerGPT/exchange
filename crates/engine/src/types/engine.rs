@@ -1,5 +1,6 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq, Hash)]
 pub enum Asset {
@@ -83,6 +84,8 @@ pub struct CreateOrder {
     pub quantity: Decimal,
     pub side: OrderSide,
     pub user_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pubsub_id: Option<Uuid>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -92,12 +95,16 @@ pub struct CancelOrder {
     pub price: Decimal,
     pub side: OrderSide,
     pub market: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pubsub_id: Option<Uuid>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GetOpenOrders {
     pub user_id: String,
     pub market: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pubsub_id: Option<Uuid>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

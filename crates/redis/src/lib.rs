@@ -1,4 +1,21 @@
+use std::fmt::Error;
+use uuid::Uuid;
+
 use fred::{clients::SubscriberClient, prelude::*};
+
+pub enum RedisQueues {
+    ORDERS,
+    USERS,
+}
+
+impl ToString for RedisQueues {
+    fn to_string(&self) -> String {
+        match self {
+            RedisQueues::ORDERS => "orders".to_string(),
+            RedisQueues::USERS => "users".to_string(),
+        }
+    }
+}
 
 pub struct RedisManager {
     client: RedisClient,
@@ -27,7 +44,11 @@ impl RedisManager {
         self.client.lpush(key, value).await
     }
 
-    pub async fn pop(&self, key: &str, count: Option<usize>) -> Result<Vec<RedisValue>, RedisError> {
+    pub async fn pop(
+        &self,
+        key: &str,
+        count: Option<usize>,
+    ) -> Result<Vec<RedisValue>, RedisError> {
         self.client.rpop(key, count).await
     }
 
@@ -37,6 +58,39 @@ impl RedisManager {
 
     pub async fn subscribe(&self, channel: &str) -> Result<(), RedisError> {
         self.subscriber.subscribe(channel).await
+    }
+
+    pub async fn unsubscribe(&self, channel: &str) -> Result<(), RedisError> {
+        self.subscriber.unsubscribe(channel).await
+    }
+
+    pub async fn push_and_wait_for_subscriber(
+        &self,
+        key: String,
+        value: String,
+        channel: Uuid,
+    ) -> Result<(), Error> {
+        self.push(key.as_str(), value).await.map_err(|e| {
+            println!("Couldn't push into queue - {}", e);
+            Error
+        })?;
+
+        let channel = channel.to_string();
+        let channel_ref = channel.as_str();
+        self.subscribe(channel_ref).await.map_err(|e| {
+            println!("Failed to subscribe to channel - {}", e);
+            Error
+        })?;
+
+        let mut message_stream = self.subscriber.message_rx();
+        if let Ok(message) = message_stream.recv().await {
+            println!("Recv {:?} on channel {}", message.value, message.channel);
+
+            let _ = self.unsubscribe(channel_ref).await;
+            return Ok(());
+        }
+
+        Ok(())
     }
 }
 
