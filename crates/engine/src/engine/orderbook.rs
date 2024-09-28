@@ -3,30 +3,7 @@ use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-use crate::engine::{AssetPair, Order, OrderSide};
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Fill {
-    pub price: Decimal,
-    pub quantity: Decimal,
-    pub trade_id: u64,
-    pub other_user_id: String,
-    pub order_id: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CancelOrder {
-    order_id: String,
-    user_id: String,
-    price: Decimal,
-    side: OrderSide,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProcessOrderResult {
-    pub executed_quantity: Decimal,
-    pub fills: Vec<Fill>,
-}
+use crate::types::engine::{AssetPair, CancelOrder, Fill, Order, OrderSide, ProcessOrderResult};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OrderBook {

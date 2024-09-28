@@ -1,8 +1,11 @@
 pub mod engine;
-use engine::engine::{CreateOrder, Engine};
+pub mod types;
+
+use engine::engine::Engine;
 use fred::prelude::RedisValue;
 use redis::RedisManager;
 use serde_json::from_str;
+use types::engine::OrderRequests;
 
 #[tokio::main]
 async fn main() {
@@ -33,22 +36,48 @@ async fn main() {
                     };
 
                     // Now you can deserialize it using serde_json
-                    match from_str::<CreateOrder>(&order_data) {
-                        Ok(order) => {
-                            println!("Order: {:?}", order);
-                            let order_result = engine.create_order(order);
+                    match from_str::<OrderRequests>(&order_data) {
+                        Ok(order) => match order {
+                            OrderRequests::CreateOrder(order) => {
+                                println!("Create Order: {:?}", order);
+                                let create_order_result = engine.create_order(order);
 
-                            match order_result {
-                                Ok(()) => {
-                                    println!("Successfully placed order!")
-                                }
-                                Err(str) => {
-                                    println!("Order creation failed - {}", str)
+                                match create_order_result {
+                                    Ok(()) => {
+                                        println!("Successfully placed order!")
+                                    }
+                                    Err(str) => {
+                                        println!("Order creation failed - {}", str)
+                                    }
                                 }
                             }
-                        }
+
+                            OrderRequests::CancelOrder(cancel_order) => {
+                                println!("Cancel Order: {:?}", cancel_order);
+                                let cancel_order_result = engine.cancel_order(cancel_order);
+
+                                match cancel_order_result {
+                                    Ok(()) => {
+                                        println!("Successfully cancelled order!")
+                                    }
+                                    Err(str) => {
+                                        println!("Order cancellation failed - {}", str)
+                                    }
+                                }
+                            }
+
+                            OrderRequests::GetOpenOrders(open_orders) => {
+                                println!("Open Order: {:?}", open_orders);
+                                let open_orders_vec = engine.get_open_orders(open_orders);
+
+                                println!(
+                                    "Successfully retrieved open orders! {:?}",
+                                    open_orders_vec
+                                );
+                            }
+                        },
                         Err(err) => {
-                            println!("Failed to deserialize order: {:?}", err);
+                            println!("Failed to deserialize order request: {:?}", err);
                         }
                     }
                 }

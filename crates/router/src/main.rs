@@ -34,7 +34,12 @@ async fn main() -> std::io::Result<()> {
             scope("/api/v1")
                 .app_data(app_state.clone())
                 .service(web::resource("/users").route(web::get().to(HttpResponse::Ok)))
-                .service(web::resource("/orders").route(web::get().to(order::execute_order))),
+                .service(
+                    web::scope("/orders")
+                        .route("", web::post().to(order::execute_order)) // POST /orders
+                        .route("", web::delete().to(order::cancel_order)) // DELETE /orders
+                        .route("/open", web::get().to(order::get_open_orders)), // GET /orders/open
+                ),
         )
     })
     .bind(config.server_addr.clone())?

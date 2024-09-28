@@ -1,20 +1,13 @@
 use crate::engine::orderbook::OrderBook;
+use crate::types::engine::{
+    Asset, AssetPair, CancelOrder, CreateOrder, GetOpenOrders, Order, OrderSide, OrderStatus,
+    OrderType, ProcessOrderResult,
+};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Mutex;
-
-use super::{orderbook::ProcessOrderResult, Asset, Order, OrderSide, OrderStatus, OrderType};
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CreateOrder {
-    market: String,
-    price: Decimal,
-    quantity: Decimal,
-    side: OrderSide,
-    user_id: String,
-}
 
 pub enum AmountType {
     AVAILABLE,
@@ -48,7 +41,7 @@ impl Engine {
     }
 
     pub fn init_engine(&mut self) {
-        let orderbook = OrderBook::new(super::AssetPair {
+        let orderbook = OrderBook::new(AssetPair {
             base: Asset::BTC,
             quote: Asset::USDT,
         });
