@@ -99,7 +99,7 @@ impl Engine {
             price: input_order.price,
             quantity: input_order.quantity,
             filled_quantity: dec!(0),
-            order_id: String::from("random_id"),
+            order_id: uuid::Uuid::new_v4().to_string(),
             user_id: input_order.user_id,
             side: input_order.side,
             order_type: OrderType::MARKET,
