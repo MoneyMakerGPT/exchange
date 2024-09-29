@@ -50,7 +50,7 @@
        bids: BTreeMap<Decimal, Vec<Order>>,
        asks: BTreeMap<Decimal, Vec<Order>>,
        asset_pair: AssetPair,
-       last_update_id: u64,
+       last_update_id: i64,
      }
      ```
 

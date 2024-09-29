@@ -29,7 +29,7 @@ pub async fn handle_order(
                 let pubsub_id = order.pubsub_id.unwrap().to_string();
                 let pubsub_id_ref = pubsub_id.as_str();
 
-                let create_order_result = engine.create_order(order);
+                let create_order_result = engine.create_order(order, redis_connection).await;
 
                 match create_order_result {
                     Ok(()) => {

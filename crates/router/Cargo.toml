@@ -14,6 +14,5 @@ rust_decimal.workspace = true
 uuid.workspace = true
 
 common_utils = { path = "../common_utils" }
-sqlx_postgres = { path = "../sqlx_postgres" }
 redis = { path = "../redis" }
 

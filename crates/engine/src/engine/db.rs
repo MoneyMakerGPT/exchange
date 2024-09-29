@@ -10,19 +10,41 @@ use serde_json::to_string;
 
 #[async_trait]
 pub trait DbUpdates {
-    async fn update_db_orders(&self, order: Order, executed_quantity: Decimal, fills: &Vec<Fill>);
-    async fn create_db_trades(&self, user_id: String, market: String, fills: &Vec<Fill>);
+    async fn update_db_orders(
+        &self,
+        order: Order,
+        executed_quantity: Decimal,
+        fills: &Vec<Fill>,
+        redis_conn: &RedisManager,
+    );
+    async fn create_db_trades(
+        &self,
+        user_id: String,
+        market: String,
+        fills: &Vec<Fill>,
+        redis_conn: &RedisManager,
+    );
 }
 
 #[async_trait]
 impl DbUpdates for Engine {
-    async fn update_db_orders(&self, order: Order, executed_quantity: Decimal, fills: &Vec<Fill>) {
-        let _ = (order, executed_quantity, fills);
+    async fn update_db_orders(
+        &self,
+        order: Order,
+        executed_quantity: Decimal,
+        fills: &Vec<Fill>,
+        redis_conn: &RedisManager,
+    ) {
+        let _ = (order, executed_quantity, fills, redis_conn);
     }
 
-    async fn create_db_trades(&self, user_id: String, market: String, fills: &Vec<Fill>) {
-        let redis_connection = RedisManager::new().await.unwrap();
-
+    async fn create_db_trades(
+        &self,
+        user_id: String,
+        market: String,
+        fills: &Vec<Fill>,
+        redis_conn: &RedisManager,
+    ) {
         for fill in fills.iter() {
             let db_trade = DbTrade {
                 trade_id: fill.trade_id,
@@ -37,7 +59,7 @@ impl DbUpdates for Engine {
 
             let create_db_trade_request = DatabaseRequests::InsertTrade(db_trade);
             let create_db_trade_data = to_string(&create_db_trade_request).unwrap();
-            let _ = redis_connection
+            let _ = redis_conn
                 .push(
                     RedisQueues::DATABASE.to_string().as_str(),
                     create_db_trade_data,

@@ -8,7 +8,7 @@ pub enum DatabaseRequests {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DbTrade {
-    pub trade_id: u64,
+    pub trade_id: i64,
     pub market: String,
     pub price: Decimal,
     pub quantity: Decimal,

@@ -10,8 +10,8 @@ pub struct OrderBook {
     pub bids: BTreeMap<Decimal, Vec<Order>>,
     pub asks: BTreeMap<Decimal, Vec<Order>>,
     pub asset_pair: AssetPair,
-    pub trade_id: u64,
-    last_update_id: u64,
+    pub trade_id: i64,
+    last_update_id: i64,
 }
 
 impl OrderBook {

@@ -66,7 +66,7 @@ pub struct Order {
 pub struct Fill {
     pub price: Decimal,
     pub quantity: Decimal,
-    pub trade_id: u64,
+    pub trade_id: i64,
     pub other_user_id: String,
     pub order_id: String,
 }

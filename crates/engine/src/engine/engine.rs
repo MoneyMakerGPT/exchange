@@ -4,6 +4,7 @@ use crate::types::engine::{
     Asset, AssetPair, CancelOrder, CreateOrder, GetOpenOrders, Order, OrderSide, OrderStatus,
     OrderType, ProcessOrderResult,
 };
+use redis::RedisManager;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
@@ -82,7 +83,7 @@ impl Engine {
         );
     }
 
-    pub fn create_order(&mut self, input_order: CreateOrder) -> Result<(), &str> {
+    pub async fn create_order(&mut self, input_order: CreateOrder, redis_conn: &RedisManager) -> Result<(), &str> {
         self.check_and_lock_funds(&input_order)
             .expect("Funds check failed");
 
@@ -113,8 +114,12 @@ impl Engine {
         println!("Current orderbook asks {:?}", orderbook.asks);
 
         let _ = self.update_user_balance(base_asset, quote_asset, order.clone(), &order_result);
-        let _ = self.update_db_orders(order, order_result.executed_quantity, &order_result.fills);
-        let _ = self.create_db_trades(input_order.user_id, input_order.market, &order_result.fills);
+        let _ = self
+            .update_db_orders(order, order_result.executed_quantity, &order_result.fills, redis_conn)
+            .await;
+        let _ = self
+            .create_db_trades(input_order.user_id, input_order.market, &order_result.fills, redis_conn)
+            .await;
 
         Ok(())
     }
