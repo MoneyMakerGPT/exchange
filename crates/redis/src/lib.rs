@@ -94,6 +94,30 @@ impl RedisManager {
     }
 }
 
+// // Singleton Implementation
+
+// add dependency - once_cell = "1.12"
+// use once_cell::sync::Lazy;
+// use std::{
+//     fmt::Error,
+//     sync::{Mutex, MutexGuard},
+// };
+// // Define a Lazy static instance of RedisManager
+// static REDIS_MANAGER: Lazy<Mutex<Option<RedisManager>>> = Lazy::new(|| Mutex::new(None));
+
+// // Function to access the RedisManager singleton instance
+// pub async fn get_redis_manager() -> Result<MutexGuard<'static, Option<RedisManager>>, RedisError> {
+//     let mut redis_manager = REDIS_MANAGER.lock().unwrap(); // Lock the mutex to ensure thread safety
+
+//     if redis_manager.is_none() {
+//         // If the instance has not been created yet, initialize it
+//         let instance = RedisManager::new().await?;
+//         *redis_manager = Some(instance);
+//     }
+
+//     Ok(redis_manager)
+// }
+
 // Example usage:
 
 // ----------------------------------------
