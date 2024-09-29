@@ -1,3 +1,4 @@
+use crate::engine::db::DbUpdates;
 use crate::engine::orderbook::OrderBook;
 use crate::types::engine::{
     Asset, AssetPair, CancelOrder, CreateOrder, GetOpenOrders, Order, OrderSide, OrderStatus,
@@ -100,7 +101,7 @@ impl Engine {
             quantity: input_order.quantity,
             filled_quantity: dec!(0),
             order_id: uuid::Uuid::new_v4().to_string(),
-            user_id: input_order.user_id,
+            user_id: input_order.user_id.clone(),
             side: input_order.side,
             order_type: OrderType::MARKET,
             order_status: OrderStatus::Pending,
@@ -111,7 +112,11 @@ impl Engine {
         println!("Current orderbook bids {:?}", orderbook.bids);
         println!("Current orderbook asks {:?}", orderbook.asks);
 
-        self.update_user_balance(base_asset, quote_asset, order.clone(), order_result)
+        let _ = self.update_user_balance(base_asset, quote_asset, order.clone(), &order_result);
+        let _ = self.update_db_orders(order, order_result.executed_quantity, &order_result.fills);
+        let _ = self.create_db_trades(input_order.user_id, input_order.market, &order_result.fills);
+
+        Ok(())
     }
 
     pub fn cancel_order(&mut self, cancel_order: CancelOrder) -> Result<(), &str> {
@@ -250,7 +255,7 @@ impl Engine {
         base_asset: Asset,
         quote_asset: Asset,
         order: Order,
-        order_result: ProcessOrderResult,
+        order_result: &ProcessOrderResult,
     ) -> Result<(), &str> {
         match order.side {
             OrderSide::BUY => {

@@ -6,6 +6,7 @@ use fred::{clients::SubscriberClient, prelude::*};
 pub enum RedisQueues {
     ORDERS,
     USERS,
+    DATABASE,
 }
 
 impl ToString for RedisQueues {
@@ -13,6 +14,7 @@ impl ToString for RedisQueues {
         match self {
             RedisQueues::ORDERS => "orders".to_string(),
             RedisQueues::USERS => "users".to_string(),
+            RedisQueues::DATABASE => "database".to_string(),
         }
     }
 }

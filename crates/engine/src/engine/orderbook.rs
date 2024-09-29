@@ -75,7 +75,7 @@ impl OrderBook {
                     fills.push(Fill {
                         price: ask.price,
                         quantity: filled_quantity,
-                        trade_id: 1,
+                        trade_id: self.trade_id,
                         other_user_id: ask.user_id.clone(),
                         order_id: ask.order_id.clone(),
                     })
@@ -109,7 +109,7 @@ impl OrderBook {
                     fills.push(Fill {
                         price: bid.price,
                         quantity: filled_quantity,
-                        trade_id: 1,
+                        trade_id: self.trade_id,
                         other_user_id: bid.user_id.clone(),
                         order_id: bid.order_id.clone(),
                     })

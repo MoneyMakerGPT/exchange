@@ -283,9 +283,9 @@ checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
 
 [[package]]
 name = "async-trait"
-version = "0.1.81"
+version = "0.1.83"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e0c28dcc82d7c8ead5cb13beb15405b57b8546e93215673ff8ca0349a028107"
+checksum = "721cae7de5c34fbb2acd27e21e6d2cf7b886dce0c27388d46c4e6c47ea4318dd"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -679,6 +679,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "db-processor"
+version = "0.1.0"
+dependencies = [
+ "fred",
+ "redis",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "der"
 version = "0.7.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -751,6 +763,7 @@ dependencies = [
 name = "engine"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "chrono",
  "fred",
  "redis",
