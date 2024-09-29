@@ -10,6 +10,7 @@ confik = "0.11"
 dotenvy = "0.15"
 env_logger = "0.10.0"
 fred = { version = "9.2.1", features = ["subscriber-client"] }
+futures-util = "0.3.30"
 redis = { version = "0.25", features = ["tokio-comp", "connection-manager"] }
 rust_decimal = "1.36.0"
 rust_decimal_macros = "1.36.0"
@@ -17,4 +18,5 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1.0.117", features = ["raw_value"] }
 sqlx = { version = "0.8.2", features = ["postgres", "runtime-tokio", "bigdecimal", "rust_decimal"] }
 tokio = { version = "1.10.0", features = ["full"] }
+tokio-tungstenite = "0.24.0"
 uuid = { version = "1.10.0", features = ["v4", "serde"] }
