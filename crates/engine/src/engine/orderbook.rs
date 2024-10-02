@@ -64,7 +64,7 @@ impl OrderBook {
 
         for (_price, asks) in self.asks.iter_mut() {
             for ask in asks.iter_mut() {
-                if order.price >= ask.price && executed_quantity < ask.quantity {
+                if order.price >= ask.price && executed_quantity < order.quantity {
                     let filled_quantity =
                         std::cmp::min(ask.quantity - executed_quantity, ask.quantity);
                     self.trade_id += 1;
@@ -98,7 +98,7 @@ impl OrderBook {
 
         for (_price, bids) in self.bids.iter_mut().rev() {
             for bid in bids.iter_mut() {
-                if order.price <= bid.price && executed_quantity < bid.quantity {
+                if order.price <= bid.price && executed_quantity < order.quantity {
                     let filled_quantity =
                         std::cmp::min(bid.quantity - executed_quantity, bid.quantity);
                     self.trade_id += 1;

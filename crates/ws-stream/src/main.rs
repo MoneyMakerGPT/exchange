@@ -1,7 +1,8 @@
 use futures_util::StreamExt;
 use std::io::Error;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use tokio::net::{TcpListener, TcpStream};
+use tokio::sync::Mutex; // need to use this instead of std::sync::Mutex because we are in an async context
 use types::WsMessage;
 
 pub mod types;
@@ -20,7 +21,7 @@ async fn main() -> Result<(), Error> {
     let listener = try_socket.expect("Failed to bind");
 
     while let Ok((stream, _)) = listener.accept().await {
-        accept_connection(stream).await;
+        tokio::spawn(accept_connection(stream));
     }
 
     Ok(())
@@ -42,7 +43,7 @@ async fn accept_connection(stream: TcpStream) {
     // add a user whenever someone connects
     let user = User::new(user_addr.to_string(), write);
     let ws_manager = Arc::new(Mutex::new(WsManager::new().await));
-    let mut manager = ws_manager.lock().unwrap();
+    let mut manager = ws_manager.lock().await;
     manager.add_user(user);
 
     while let Some(msg) = read.next().await {
@@ -63,14 +64,14 @@ async fn accept_connection(stream: TcpStream) {
         } else if msg.is_close() {
             println!("Closing Connection to user with addr: {}", user_addr);
             // remove user when connection is closed
-            let mut manager = ws_manager.lock().unwrap();
+            let mut manager = ws_manager.lock().await;
             manager.remove_user(user_addr.to_string().as_str());
         }
     }
 }
 
 async fn process_data(data: WsMessage, user_addr: &str, ws_manager: Arc<Mutex<WsManager>>) {
-    let mut manager = ws_manager.lock().unwrap();
+    let mut manager = ws_manager.lock().await;
 
     match data.method.as_str() {
         "SUBSCRIBE" => {
