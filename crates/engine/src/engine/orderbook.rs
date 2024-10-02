@@ -158,4 +158,27 @@ impl OrderBook {
             OrderSide::SELL => cancel(&mut self.asks),
         }
     }
+
+    pub fn get_depth(&self) -> (Vec<(Decimal, Decimal)>, Vec<(Decimal, Decimal)>) {
+        let mut bids_depth: Vec<(Decimal, Decimal)> = Vec::new();
+        let mut asks_depth: Vec<(Decimal, Decimal)> = Vec::new();
+
+        // Aggregate quantities for each price level in bids
+        for (price, orders) in self.bids.iter() {
+            let total_quantity = orders
+                .iter()
+                .fold(Decimal::ZERO, |acc, order| acc + order.quantity);
+            bids_depth.push((*price, total_quantity));
+        }
+
+        // Aggregate quantities for each price level in asks
+        for (price, orders) in self.asks.iter() {
+            let total_quantity = orders
+                .iter()
+                .fold(Decimal::ZERO, |acc, order| acc + order.quantity);
+            asks_depth.push((*price, total_quantity));
+        }
+
+        (bids_depth, asks_depth)
+    }
 }
