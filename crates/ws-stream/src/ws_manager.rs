@@ -1,13 +1,18 @@
+use futures_util::SinkExt;
 use redis::RedisManager;
+use tokio_tungstenite::tungstenite::Message;
 
-use crate::{types::WsMessage, user::User};
+use crate::{
+    types::{WsMessage, WsResponse},
+    user::User,
+};
 use std::collections::HashMap;
 
 pub struct WsManager {
-    users: HashMap<String, User>,
-    subscriptions: HashMap<String, Vec<String>>, // user_id -> [subscription_id]
-    reverse_subscriptions: HashMap<String, Vec<String>>, // subscription_id -> [user_id]
-    redis_connection: RedisManager,
+    pub users: HashMap<String, User>,
+    pub subscriptions: HashMap<String, Vec<String>>, // user_id -> [subscription_id]
+    pub reverse_subscriptions: HashMap<String, Vec<String>>, // subscription_id -> [user_id]
+    pub redis_connection: RedisManager,
 }
 
 impl WsManager {
@@ -91,6 +96,23 @@ impl WsManager {
                         .unsubscribe(subscription_id.as_str())
                         .await
                         .expect("Failed to unsubscribe in redis");
+                }
+            }
+        }
+    }
+
+    // {"data":{"E":1727866324128584,"T":1727866324088922,"U":4977146,"a":[["1.0003","0"]],"b":[],"e":"depth","s":"USDT_USDT","u":4977146},"stream":"depth.USDT_USDT"}
+    pub async fn send_to_ws_stream(&mut self, message: String) {
+        let ws_message: WsResponse = serde_json::from_str(message.as_str()).unwrap();
+
+        if let Some(users) = self.reverse_subscriptions.get(ws_message.stream.as_str()) {
+            for user_id in users {
+                if let Some(user) = self.users.get_mut(user_id) {
+                    let user_ws_stream = &mut user.ws_stream;
+                    user_ws_stream
+                        .send(Message::Text(message.clone()))
+                        .await
+                        .unwrap();
                 }
             }
         }

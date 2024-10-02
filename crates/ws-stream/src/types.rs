@@ -1,6 +1,12 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct WsResponse {
+    pub stream: String,
+    pub data: serde_json::Value, // any kind of JSON-like data - initialise using serde_json::json! macro
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WsMessage {
     pub method: String,
     pub params: Vec<String>,
@@ -32,17 +38,20 @@ impl WsMessage {
 
 #[derive(Debug, Clone)]
 pub enum SubscriptionType {
-    Depth,
-    Trade,
-    Ticker,
+    #[allow(non_camel_case_types)]
+    depth,
+    #[allow(non_camel_case_types)]
+    trade,
+    #[allow(non_camel_case_types)]
+    ticker,
 }
 
 impl SubscriptionType {
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
-            "depth" => Some(SubscriptionType::Depth),
-            "trade" => Some(SubscriptionType::Trade),
-            "ticker" => Some(SubscriptionType::Ticker),
+            "depth" => Some(SubscriptionType::depth),
+            "trade" => Some(SubscriptionType::trade),
+            "ticker" => Some(SubscriptionType::ticker),
             _ => None,
         }
     }
@@ -50,17 +59,20 @@ impl SubscriptionType {
 
 #[derive(Debug, Clone)]
 pub enum SupportedAssetPairs {
-    BTCUSDT,
-    ETHUSDT,
-    SOLUSDT,
+    #[allow(non_camel_case_types)]
+    BTC_USDT,
+    #[allow(non_camel_case_types)]
+    ETH_USDT,
+    #[allow(non_camel_case_types)]
+    SOL_USDT,
 }
 
 impl SupportedAssetPairs {
     pub fn from_str(asset_pair_str: &str) -> Result<SupportedAssetPairs, &'static str> {
         match asset_pair_str {
-            "BTC_USDT" => Ok(SupportedAssetPairs::BTCUSDT),
-            "ETH_USDT" => Ok(SupportedAssetPairs::ETHUSDT),
-            "SOL_USDT" => Ok(SupportedAssetPairs::SOLUSDT),
+            "BTC_USDT" => Ok(SupportedAssetPairs::BTC_USDT),
+            "ETH_USDT" => Ok(SupportedAssetPairs::ETH_USDT),
+            "SOL_USDT" => Ok(SupportedAssetPairs::SOL_USDT),
             _ => Err("Unsupported asset pair"),
         }
     }

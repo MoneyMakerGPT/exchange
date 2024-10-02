@@ -1,6 +1,7 @@
+use fred::prelude::*;
 use futures_util::StreamExt;
 use std::io::Error;
-use std::sync::Arc;
+use std::{sync::Arc, thread};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Mutex; // need to use this instead of std::sync::Mutex because we are in an async context
 use types::WsMessage;
@@ -20,19 +21,28 @@ async fn main() -> Result<(), Error> {
     let try_socket = TcpListener::bind(&addr).await;
     let listener = try_socket.expect("Failed to bind");
 
+    let ws_manager = Arc::new(Mutex::new(WsManager::new().await));
+
+    let ws_manager_clone = ws_manager.clone();
+    thread::spawn(move || {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(process_redis_message(ws_manager_clone));
+    });
+    // thread::spawn can't work with async functions directly since it doesn't understand Futures.
+    // By creating a new tokio runtime inside the thread, we can execute the async task within this non-async context.
+
+    // Accept new connections in a loop
     while let Ok((stream, _)) = listener.accept().await {
-        tokio::spawn(accept_connection(stream));
+        tokio::spawn(accept_connection(stream, ws_manager.clone()));
     }
 
     Ok(())
 }
 
-async fn accept_connection(stream: TcpStream) {
+async fn accept_connection(stream: TcpStream, ws_manager: Arc<Mutex<WsManager>>) {
     let user_addr = stream
         .peer_addr()
         .expect("connected streams should have a peer address");
-
-    println!("Address {}", user_addr);
 
     let ws_stream = tokio_tungstenite::accept_async(stream)
         .await
@@ -40,17 +50,21 @@ async fn accept_connection(stream: TcpStream) {
 
     let (write, mut read) = ws_stream.split();
 
-    // add a user whenever someone connects
+    // Add a user whenever someone connects
     let user = User::new(user_addr.to_string(), write);
-    let ws_manager = Arc::new(Mutex::new(WsManager::new().await));
-    let mut manager = ws_manager.lock().await;
-    manager.add_user(user);
+
+    // Lock the manager just long enough to add the user - to reduce the time the lock is held
+    {
+        let mut manager = ws_manager.lock().await;
+        manager.add_user(user);
+    }
+
+    println!("Connection established with addr: {}", user_addr);
 
     while let Some(msg) = read.next().await {
         let msg = msg.unwrap();
-        if msg.is_text() {
-            println!("Received a message: {}", msg);
 
+        if msg.is_text() {
             let msg = msg.to_text().unwrap();
 
             if let Ok(data) = serde_json::from_str::<WsMessage>(&msg) {
@@ -63,7 +77,7 @@ async fn accept_connection(stream: TcpStream) {
             }
         } else if msg.is_close() {
             println!("Closing Connection to user with addr: {}", user_addr);
-            // remove user when connection is closed
+            // Remove user when connection is closed
             let mut manager = ws_manager.lock().await;
             manager.remove_user(user_addr.to_string().as_str());
         }
@@ -81,5 +95,31 @@ async fn process_data(data: WsMessage, user_addr: &str, ws_manager: Arc<Mutex<Ws
             manager.unsubscribe(user_addr, data).await;
         }
         _ => {}
+    }
+}
+
+async fn process_redis_message(ws_manager: Arc<Mutex<WsManager>>) {
+    let mut message_stream;
+
+    // Scope the lock to only the initialization of message_stream
+    {
+        let manager = ws_manager.lock().await;
+        message_stream = manager.redis_connection.subscriber.message_rx();
+    }
+
+    println!("Listening for Redis Publisher messages");
+
+    while let Ok(message) = message_stream.recv().await {
+        let publisher_message = match message.value {
+            RedisValue::String(s) => s.to_string(),
+            _ => {
+                println!("Unexpected Redis Publisher message value type");
+                continue;
+            }
+        };
+
+        // Lock the manager only when you need to send the message
+        let mut manager = ws_manager.lock().await;
+        manager.send_to_ws_stream(publisher_message).await;
     }
 }

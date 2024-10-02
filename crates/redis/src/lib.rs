@@ -20,9 +20,9 @@ impl ToString for RedisQueues {
 }
 
 pub struct RedisManager {
-    client: RedisClient,
-    publisher: RedisClient,
-    subscriber: SubscriberClient,
+    pub client: RedisClient,
+    pub publisher: RedisClient,
+    pub subscriber: SubscriberClient,
 }
 
 impl RedisManager {

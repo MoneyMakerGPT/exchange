@@ -1,6 +1,6 @@
 use actix_web::web::{Data, Json};
 
-use serde_json::{from_str, to_string};
+use serde_json::to_string;
 use std::time::Instant;
 use uuid::Uuid;
 
