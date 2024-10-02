@@ -7,6 +7,48 @@ pub struct WsMessage {
     pub id: u32,
 }
 
+impl WsMessage {
+    pub fn parse_subscription(&self) -> Option<(SubscriptionType, SupportedAssetPairs)> {
+        if self.params.is_empty() {
+            return None;
+        }
+
+        let subscription_id = &self.params[0];
+        let parts: Vec<&str> = subscription_id.split('.').collect();
+
+        if parts.len() != 2 {
+            return None;
+        }
+
+        let subscription_type_str = parts[0];
+        let asset_pair_str = parts[1];
+
+        let subscription_type = SubscriptionType::from_str(subscription_type_str)?;
+        let asset_pair = SupportedAssetPairs::from_str(asset_pair_str).ok()?;
+
+        Some((subscription_type, asset_pair))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum SubscriptionType {
+    Depth,
+    Trade,
+    Ticker,
+}
+
+impl SubscriptionType {
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "depth" => Some(SubscriptionType::Depth),
+            "trade" => Some(SubscriptionType::Trade),
+            "ticker" => Some(SubscriptionType::Ticker),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum SupportedAssetPairs {
     BTCUSDT,
     ETHUSDT,
@@ -22,48 +64,4 @@ impl SupportedAssetPairs {
             _ => Err("Unsupported asset pair"),
         }
     }
-
-    pub fn to_asset_pair(&self) -> AssetPair {
-        match self {
-            SupportedAssetPairs::BTCUSDT => AssetPair {
-                base: Asset::BTC,
-                quote: Asset::USDT,
-            },
-            SupportedAssetPairs::ETHUSDT => AssetPair {
-                base: Asset::ETH,
-                quote: Asset::USDT,
-            },
-            SupportedAssetPairs::SOLUSDT => AssetPair {
-                base: Asset::SOL,
-                quote: Asset::USDT,
-            },
-        }
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq, Hash)]
-pub enum Asset {
-    USDT,
-    BTC,
-    ETH,
-    SOL,
-}
-
-impl Asset {
-    pub fn from_str(asset_str: &str) -> Result<Asset, &'static str> {
-        // static lifetime because Err str slice is static
-        match asset_str {
-            "USDT" => Ok(Asset::USDT),
-            "BTC" => Ok(Asset::BTC),
-            "ETH" => Ok(Asset::ETH),
-            "SOL" => Ok(Asset::SOL),
-            _ => Err("Unsupported asset"),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct AssetPair {
-    pub base: Asset,
-    pub quote: Asset,
 }

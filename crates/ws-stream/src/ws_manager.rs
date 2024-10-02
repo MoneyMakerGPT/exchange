@@ -1,6 +1,6 @@
 use redis::RedisManager;
 
-use crate::{types::{SupportedAssetPairs, WsMessage}, user::User};
+use crate::{types::WsMessage, user::User};
 use std::collections::HashMap;
 
 pub struct WsManager {
@@ -33,14 +33,17 @@ impl WsManager {
         }
     }
 
-    // {"method":"SUBSCRIBE","params":["trade.BTC_USDC"],"id":1}
+    // {"method":"SUBSCRIBE","params":["trade.BTC_USDT"],"id":1}
     pub async fn subscribe(&mut self, user_id: &str, message: WsMessage) {
         if message.method == "SUBSCRIBE" {
-            let subscription_id = message.params[0].clone();
-
-            if let Err(_) = SupportedAssetPairs::from_str(subscription_id.as_str()) {
-                return;
-            }
+            let (subscription_type, asset_pair) = match message.parse_subscription() {
+                Some(result) => result,
+                None => {
+                    eprintln!("Invalid subscription format: {:?}", message.params);
+                    return;
+                }
+            };
+            let subscription_id = format!("{:?}.{:?}", subscription_type, asset_pair);
 
             if let Some(subscriptions) = self.subscriptions.get_mut(user_id) {
                 subscriptions.push(subscription_id.clone());
@@ -63,14 +66,17 @@ impl WsManager {
         }
     }
 
-    // {"method":"UNSUBSCRIBE","params":["trade.BTC_USDC"],"id":1}
+    // {"method":"UNSUBSCRIBE","params":["trade.BTC_USDT"],"id":1}
     pub async fn unsubscribe(&mut self, user_id: &str, message: WsMessage) {
         if message.method == "UNSUBSCRIBE" {
-            let subscription_id = message.params[0].clone();
-
-            if let Err(_) = SupportedAssetPairs::from_str(subscription_id.as_str()) {
-                return;
-            }
+            let (subscription_type, asset_pair) = match message.parse_subscription() {
+                Some(result) => result,
+                None => {
+                    eprintln!("Invalid unsubscription format: {:?}", message.params);
+                    return;
+                }
+            };
+            let subscription_id = format!("{:?}.{:?}", subscription_type, asset_pair);
 
             if let Some(subscriptions) = self.subscriptions.get_mut(user_id) {
                 subscriptions.retain(|id| id != &subscription_id);
