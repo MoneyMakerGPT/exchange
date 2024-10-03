@@ -44,3 +44,15 @@ pub enum OrderRequests {
     CancelOrder(CancelOrderInput),
     GetOpenOrders(GetOpenOrdersInput),
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreateUserInput {
+    pub user_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pubsub_id: Option<Uuid>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum UserRequests {
+    CreateUser(CreateUserInput),
+}

@@ -1,9 +1,10 @@
 use actix_web::{
     web::{self, scope},
-    App, HttpResponse, HttpServer,
+    App, HttpServer,
 };
 use confik::{Configuration as _, EnvSource};
 use dotenvy::dotenv;
+use routes::user;
 
 pub mod config;
 pub mod routes;
@@ -33,7 +34,7 @@ async fn main() -> std::io::Result<()> {
         App::new().service(
             scope("/api/v1")
                 .app_data(app_state.clone())
-                .service(web::resource("/users").route(web::get().to(HttpResponse::Ok)))
+                .service(web::scope("/users").route("", web::post().to(user::create_user)))
                 .service(
                     web::scope("/orders")
                         .route("", web::post().to(order::execute_order)) // POST /orders
