@@ -1,6 +1,7 @@
 use std::fmt::Error;
 use uuid::Uuid;
 
+use fred::types::RedisConfig;
 use fred::{clients::SubscriberClient, prelude::*};
 
 pub enum RedisQueues {
@@ -27,9 +28,15 @@ pub struct RedisManager {
 
 impl RedisManager {
     pub async fn new() -> Result<Self, RedisError> {
-        let client = Builder::default_centralized().build()?;
-        let publisher = Builder::default_centralized().build()?;
-        let subscriber = Builder::default_centralized().build_subscriber_client()?;
+        // use fred::types::ServerConfig;
+        // let config = RedisConfig { server: ServerConfig::Centralized { server: Server { host: "exchange-redis".into(), port: 6379, }, }, ..Default::default() };
+
+        let config = RedisConfig::from_url("redis://exchange-redis:6379")
+            .expect("Failed to create redis config from url");
+
+        let client = Builder::from_config(config.clone()).build()?;
+        let publisher = Builder::from_config(config.clone()).build()?;
+        let subscriber = Builder::from_config(config.clone()).build_subscriber_client()?;
 
         client.init().await?;
         publisher.init().await?;

@@ -1,6 +1,6 @@
 use actix_web::{
     web::{self, scope},
-    App, HttpServer,
+    App, HttpResponse, HttpServer,
 };
 use confik::{Configuration as _, EnvSource};
 use dotenvy::dotenv;
@@ -34,7 +34,8 @@ async fn main() -> std::io::Result<()> {
         App::new().service(
             scope("/api/v1")
                 .app_data(app_state.clone())
-                .service(web::scope("/users").route("", web::post().to(user::create_user)))
+                .service(web::scope("/health").route("", web::get().to(HttpResponse::Ok))) // GET /api/v1/ping
+                .service(web::scope("/users").route("", web::post().to(user::create_user))) // POST /api/v1/users
                 .service(
                     web::scope("/orders")
                         .route("", web::post().to(order::execute_order)) // POST /orders

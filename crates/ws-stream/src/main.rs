@@ -15,7 +15,7 @@ use ws_manager::WsManager;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let addr = "127.0.0.1:4000".to_string();
+    let addr = "localhost:4000".to_string();
 
     // Create the event loop and TCP listener we'll accept connections on.
     let try_socket = TcpListener::bind(&addr).await;

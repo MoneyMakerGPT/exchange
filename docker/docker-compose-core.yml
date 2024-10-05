@@ -1,0 +1,79 @@
+version: "3"
+
+services:
+  router:
+    container_name: exchange-router
+    image: rust:latest
+    working_dir: /app/crates/router
+    command: cargo run --bin router
+    restart: always
+    env_file: .env
+    deploy:
+      resources:
+        limits:
+          memory: 5G
+    ports:
+      - "7000:8080"
+    volumes:
+      - ../:/app
+    networks:
+      - gateway
+
+  engine:
+    container_name: exchange-engine
+    image: rust:latest
+    working_dir: /app/crates/engine
+    command: cargo run --bin engine
+    restart: always
+    env_file: .env
+    deploy:
+      resources:
+        limits:
+          memory: 5G
+    ports:
+      - "7001:8081"
+    volumes:
+      - ../:/app
+    networks:
+      - gateway
+
+  ws-stream:
+    container_name: exchange-ws-stream
+    image: rust:latest
+    working_dir: /app/crates/ws-stream
+    command: cargo run --bin ws-stream
+    restart: always
+    env_file: .env
+    deploy:
+      resources:
+        limits:
+          memory: 5G
+    ports:
+      - "7002:4000"
+    volumes:
+      - ../:/app
+    networks:
+      - gateway
+
+  db-processor:
+    container_name: exchange-db-processor
+    image: rust:latest
+    working_dir: /app/crates/db-processor
+    command: cargo run --bin db-processor
+    restart: always
+    env_file: .env
+    deploy:
+      resources:
+        limits:
+          memory: 5G
+    ports:
+      - "7003:8083"
+    volumes:
+      - ../:/app
+    networks:
+      - gateway
+      
+networks:
+  gateway:
+    name: exchange
+    external: true

@@ -8,7 +8,7 @@ impl PostgresDb {
     pub async fn new() -> Result<Self, sqlx::Error> {
         let pool = PgPoolOptions::new()
             .max_connections(5)
-            .connect("postgres://root:root@localhost:5000/exchange-db")
+            .connect("postgres://root:root@exchange-postgres:5432/exchange-db")
             .await?;
 
         Ok(Self { pool })
