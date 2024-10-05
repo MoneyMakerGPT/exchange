@@ -6,10 +6,14 @@ pub struct PostgresDb {
 
 impl PostgresDb {
     pub async fn new() -> Result<Self, sqlx::Error> {
+        let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
         let pool = PgPoolOptions::new()
-            .max_connections(5)
-            .connect("postgres://root:root@exchange-postgres:5432/exchange-db")
+            .max_connections(10)
+            .connect(&db_url)
             .await?;
+
+        println!("Connected to Postgres - {}", db_url);
 
         Ok(Self { pool })
     }

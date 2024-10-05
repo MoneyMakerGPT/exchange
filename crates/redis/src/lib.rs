@@ -31,7 +31,9 @@ impl RedisManager {
         // use fred::types::ServerConfig;
         // let config = RedisConfig { server: ServerConfig::Centralized { server: Server { host: "exchange-redis".into(), port: 6379, }, }, ..Default::default() };
 
-        let config = RedisConfig::from_url("redis://exchange-redis:6379")
+        let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
+
+        let config = RedisConfig::from_url(redis_url.as_str())
             .expect("Failed to create redis config from url");
 
         let client = Builder::from_config(config.clone()).build()?;
