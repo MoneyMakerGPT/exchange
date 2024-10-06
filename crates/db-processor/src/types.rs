@@ -17,3 +17,16 @@ pub struct DbTrade {
     pub order_id: String,
     pub timestamp: i64,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KlineData {
+    pub open: String,
+    pub close: String,
+    pub high: String,
+    pub low: String,
+    pub quote_volume: String,
+    pub start: String,
+    pub end: String,
+    pub trades: String,
+    pub volume: String,
+}

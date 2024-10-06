@@ -51,6 +51,15 @@ pub struct GetTradesInput {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")] // frontend uses camelCase, will be renamed to snake_case in the backend
+pub struct GetKlinesInput {
+    pub symbol: String,
+    pub interval: String,
+    // #[serde(rename = "startTime")]  // can also use only this line to rename the field
+    pub start_time: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum OrderRequests {
     CreateOrder(CreateOrderInput),
     CancelOrder(CancelOrderInput),
