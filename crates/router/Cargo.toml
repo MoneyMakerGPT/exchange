@@ -15,4 +15,5 @@ uuid.workspace = true
 
 common_utils = { path = "../common_utils" }
 redis = { path = "../redis" }
-
+sqlx_postgres = { path = "../sqlx_postgres" }
+db-processor = { path = "../db-processor" }

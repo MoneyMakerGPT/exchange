@@ -46,6 +46,11 @@ pub struct GetDepthInput {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GetTradesInput {
+    pub symbol: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum OrderRequests {
     CreateOrder(CreateOrderInput),
     CancelOrder(CancelOrderInput),

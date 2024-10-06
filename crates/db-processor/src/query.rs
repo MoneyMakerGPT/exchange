@@ -1,4 +1,5 @@
 use crate::types::DbTrade;
+use rust_decimal::Decimal;
 use sqlx::{Pool, Postgres};
 
 pub async fn insert_trade(pool: &Pool<Postgres>, trade: DbTrade) -> Result<(), sqlx::Error> {
@@ -21,10 +22,30 @@ pub async fn insert_trade(pool: &Pool<Postgres>, trade: DbTrade) -> Result<(), s
     Ok(())
 }
 
-pub async fn get_trade(pool: sqlx::Pool<sqlx::Postgres>) -> Result<String, sqlx::Error> {
-    let trade = sqlx::query!("SELECT * FROM trades")
-        .fetch_one(&pool)
-        .await?;
+pub async fn get_trades_from_db(
+    pool: sqlx::Pool<sqlx::Postgres>,
+    market: String,
+) -> Result<Vec<DbTrade>, sqlx::Error> {
+    let trades = sqlx::query!(
+        "SELECT * FROM trades WHERE market = $1 ORDER BY timestamp desc",
+        market
+    )
+    .fetch_all(&pool)
+    .await?;
 
-    Ok(trade.order_id)
+    let trades_vec: Vec<DbTrade> = trades
+        .iter()
+        .map(|trade| DbTrade {
+            trade_id: trade.trade_id.clone(),
+            market: trade.market.clone(),
+            price: trade.price.to_string().parse::<Decimal>().unwrap(),
+            quantity: trade.quantity.to_string().parse::<Decimal>().unwrap(),
+            user_id: trade.user_id.clone(),
+            other_user_id: trade.other_user_id.clone(),
+            order_id: trade.order_id.clone(),
+            timestamp: trade.timestamp,
+        })
+        .collect();
+
+    Ok(trades_vec)
 }

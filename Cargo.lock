@@ -704,6 +704,7 @@ dependencies = [
  "fred",
  "redis",
  "rust_decimal",
+ "rust_decimal_macros",
  "serde",
  "serde_json",
  "sqlx",
@@ -1844,12 +1845,14 @@ dependencies = [
  "actix-web",
  "common_utils",
  "confik",
+ "db-processor",
  "dotenvy",
  "env_logger",
  "redis",
  "rust_decimal",
  "serde",
  "serde_json",
+ "sqlx_postgres",
  "uuid",
 ]
 

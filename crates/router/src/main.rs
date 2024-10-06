@@ -4,7 +4,8 @@ use actix_web::{
 };
 use confik::{Configuration as _, EnvSource};
 use dotenvy::dotenv;
-use routes::{user, depth, order};
+use routes::{depth, order, trade, user};
+use sqlx_postgres::PostgresDb;
 
 pub mod config;
 pub mod routes;
@@ -27,6 +28,7 @@ async fn main() -> std::io::Result<()> {
 
     let app_state = web::Data::new(AppState {
         redis_connection: RedisManager::new().await.unwrap(),
+        postgres_db: PostgresDb::new().await.unwrap(),
     });
 
     let server = HttpServer::new(move || {
@@ -35,7 +37,8 @@ async fn main() -> std::io::Result<()> {
                 .app_data(app_state.clone())
                 .service(web::scope("/health").route("", web::get().to(HttpResponse::Ok))) // GET /api/v1/ping
                 .service(web::scope("/users").route("", web::post().to(user::create_user))) // POST /api/v1/users
-                .service(web::scope("/depth").route("", web::get().to(depth::get_depth))) // // GET /api/v1/depth
+                .service(web::scope("/depth").route("", web::get().to(depth::get_depth))) // // GET /api/v1/depth?symbol=BTC_USDT
+                .service(web::scope("/trades").route("", web::get().to(trade::get_trades))) // // GET /api/v1/trades?symbol=BTC_USDT
                 .service(
                     web::scope("/orders")
                         .route("", web::post().to(order::execute_order)) // POST /orders
