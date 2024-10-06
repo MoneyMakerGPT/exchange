@@ -2,8 +2,8 @@ use crate::engine::db::DbUpdates;
 use crate::engine::orderbook::OrderBook;
 use crate::engine::ws_stream::WsStreamUpdates;
 use crate::types::engine::{
-    Asset, AssetPair, CancelOrder, CreateOrder, GetOpenOrders, Order, OrderSide, OrderStatus,
-    OrderType, ProcessOrderResult,
+    Asset, AssetPair, CancelOrder, CreateOrder, GetDepth, GetOpenOrders, Order, OrderSide,
+    OrderStatus, OrderType, ProcessOrderResult,
 };
 use redis::RedisManager;
 use rust_decimal::Decimal;
@@ -88,7 +88,7 @@ impl Engine {
         &mut self,
         input_order: CreateOrder,
         redis_conn: &RedisManager,
-    ) -> Result<(), &str> {
+    ) -> Result<String, &str> {
         self.check_and_lock_funds(&input_order)
             .expect("Funds check failed");
 
@@ -101,12 +101,13 @@ impl Engine {
         let assets: Vec<&str> = input_order.market.split('_').collect();
         let base_asset = Asset::from_str(assets[0]).unwrap();
         let quote_asset = Asset::from_str(assets[1]).unwrap();
+        let order_id = uuid::Uuid::new_v4().to_string();
 
         let order = Order {
             price: input_order.price,
             quantity: input_order.quantity,
             filled_quantity: dec!(0),
-            order_id: uuid::Uuid::new_v4().to_string(),
+            order_id: order_id.clone(),
             user_id: input_order.user_id.clone(),
             side: input_order.side,
             order_type: OrderType::MARKET,
@@ -156,10 +157,10 @@ impl Engine {
             )
             .await;
 
-        Ok(())
+        Ok(order_id)
     }
 
-    pub fn cancel_order(&mut self, cancel_order: CancelOrder) -> Result<(), &str> {
+    pub fn cancel_order(&mut self, cancel_order: CancelOrder) -> Result<String, &str> {
         let orderbook = self
             .orderbooks
             .iter_mut()
@@ -171,6 +172,7 @@ impl Engine {
         let quote_asset_str = assets[1];
         let base_asset = Asset::from_str(base_asset_str)?;
         let quote_asset = Asset::from_str(quote_asset_str)?;
+        let cancel_order_id = cancel_order.order_id.clone();
 
         let result = orderbook.cancel_order(cancel_order);
 
@@ -214,14 +216,15 @@ impl Engine {
                         )?;
                     }
                 }
+
+                return Ok(cancel_order_id);
             }
 
             Err(()) => {
-                println!("Failed to cancel order")
+                println!("Failed to cancel order");
+                return Err("Failed to cancel order");
             }
         }
-
-        Ok(())
     }
 
     pub fn get_open_orders(&mut self, open_orders: GetOpenOrders) -> Vec<&Order> {
@@ -234,6 +237,18 @@ impl Engine {
         let open_orders: Vec<&Order> = orderbook.get_open_orders(open_orders.user_id);
 
         open_orders
+    }
+
+    pub fn get_depth(&self, depth: GetDepth) -> (Vec<(Decimal, Decimal)>, Vec<(Decimal, Decimal)>) {
+        let orderbook = self
+            .orderbooks
+            .iter()
+            .find(|orderbook| orderbook.ticker() == depth.symbol)
+            .expect("No matching orderbook found!");
+
+        let depth = orderbook.get_depth();
+
+        depth
     }
 
     pub fn check_and_lock_funds(&mut self, order: &CreateOrder) -> Result<(), &str> {

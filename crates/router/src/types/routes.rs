@@ -39,10 +39,18 @@ pub struct GetOpenOrdersInput {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GetDepthInput {
+    pub symbol: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pubsub_id: Option<Uuid>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum OrderRequests {
     CreateOrder(CreateOrderInput),
     CancelOrder(CancelOrderInput),
     GetOpenOrders(GetOpenOrdersInput),
+    GetDepth(GetDepthInput),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

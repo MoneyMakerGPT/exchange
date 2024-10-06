@@ -6,7 +6,9 @@ use uuid::Uuid;
 
 use crate::types::{
     app::AppState,
-    routes::{CancelOrderInput, CreateOrderInput, GetOpenOrdersInput, OrderRequests},
+    routes::{
+        CancelOrderInput, CreateOrderInput, GetOpenOrdersInput, OrderRequests,
+    },
 };
 
 use redis::RedisQueues;
@@ -36,14 +38,22 @@ pub async fn execute_order(
             .await;
 
         match result {
-            Ok(()) => {}
+            Ok(published_data) => {
+                let published_data_json: serde_json::Value =
+                    serde_json::from_str(&published_data).unwrap();
+
+                println!("Time: {:?}", starttime.elapsed());
+                return actix_web::HttpResponse::Ok().json(published_data_json);
+            }
             Err(e) => {
                 println!("Failed to get created order from redis - {}", e);
+                println!("Time: {:?}", starttime.elapsed());
+                return actix_web::HttpResponse::InternalServerError().finish();
             }
         }
     }
 
-    println!("Time: {:?}", starttime.elapsed());
+    println!("Timeout: {:?}", starttime.elapsed());
     actix_web::HttpResponse::Ok().finish()
 }
 
@@ -71,15 +81,22 @@ pub async fn cancel_order(
             .await;
 
         match result {
-            Ok(()) => {}
+            Ok(published_data) => {
+                let published_data_json: serde_json::Value =
+                    serde_json::from_str(&published_data).unwrap();
+
+                println!("Time: {:?}", starttime.elapsed());
+                return actix_web::HttpResponse::Ok().json(published_data_json);
+            }
             Err(e) => {
                 println!("Failed to get cancelled order from redis - {}", e);
+                println!("Time: {:?}", starttime.elapsed());
+                return actix_web::HttpResponse::InternalServerError().finish();
             }
         }
     }
 
-    println!("Time: {:?}", starttime.elapsed());
-
+    println!("Timeout: {:?}", starttime.elapsed());
     actix_web::HttpResponse::Ok().finish()
 }
 
@@ -107,14 +124,23 @@ pub async fn get_open_orders(
             .await;
 
         match result {
-            Ok(()) => {}
+            Ok(published_data) => {
+                let published_data_json: serde_json::Value =
+                    serde_json::from_str(&published_data).unwrap();
+
+                println!("Time: {:?}", starttime.elapsed());
+                return actix_web::HttpResponse::Ok().json(published_data_json);
+            }
             Err(e) => {
                 println!("Failed to get open orders from redis - {}", e);
+                println!("Time: {:?}", starttime.elapsed());
+                return actix_web::HttpResponse::InternalServerError().finish();
             }
         }
     }
 
-    println!("Time: {:?}", starttime.elapsed());
+    println!("Timeout: {:?}", starttime.elapsed());
 
     actix_web::HttpResponse::Ok().finish()
 }
+

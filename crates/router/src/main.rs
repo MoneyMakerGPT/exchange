@@ -4,13 +4,12 @@ use actix_web::{
 };
 use confik::{Configuration as _, EnvSource};
 use dotenvy::dotenv;
-use routes::user;
+use routes::{user, depth, order};
 
 pub mod config;
 pub mod routes;
 pub mod types;
 use crate::config::RouterConfig;
-use crate::routes::order;
 use crate::types::app::AppState;
 
 use redis::RedisManager;
@@ -36,6 +35,7 @@ async fn main() -> std::io::Result<()> {
                 .app_data(app_state.clone())
                 .service(web::scope("/health").route("", web::get().to(HttpResponse::Ok))) // GET /api/v1/ping
                 .service(web::scope("/users").route("", web::post().to(user::create_user))) // POST /api/v1/users
+                .service(web::scope("/depth").route("", web::get().to(depth::get_depth))) // // GET /api/v1/depth
                 .service(
                     web::scope("/orders")
                         .route("", web::post().to(order::execute_order)) // POST /orders

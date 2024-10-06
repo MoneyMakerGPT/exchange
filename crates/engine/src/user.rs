@@ -29,8 +29,15 @@ pub async fn handle_user(
 
                 engine.init_user_balance(user.user_id.as_str());
 
+                let create_user_json = serde_json::json!({
+                    "status": "Created User",
+                    "user_id": user.user_id,
+                });
+
+                let create_user_string = serde_json::to_string(&create_user_json).unwrap();
+
                 let _ = redis_connection
-                    .publish(pubsub_id_ref, String::from("Created User"))
+                    .publish(pubsub_id_ref, String::from(create_user_string))
                     .await;
 
                 println!("Successfully created user!")

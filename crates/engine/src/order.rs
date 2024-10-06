@@ -32,14 +32,33 @@ pub async fn handle_order(
                 let create_order_result = engine.create_order(order, redis_connection).await;
 
                 match create_order_result {
-                    Ok(()) => {
+                    Ok(order_id) => {
+                        let create_order_json = serde_json::json!({
+                            "status": "Created Order",
+                            "order_id": order_id,
+                        });
+
+                        let create_order_string =
+                            serde_json::to_string(&create_order_json).unwrap();
+
                         let _ = redis_connection
-                            .publish(pubsub_id_ref, String::from("Created Order"))
+                            .publish(pubsub_id_ref, create_order_string)
                             .await;
 
                         println!("Successfully placed order!")
                     }
                     Err(str) => {
+                        let create_order_json = serde_json::json!({
+                            "status": "Failed to Create Order",
+                        });
+
+                        let create_order_string =
+                            serde_json::to_string(&create_order_json).unwrap();
+
+                        let _ = redis_connection
+                            .publish(pubsub_id_ref, create_order_string)
+                            .await;
+
                         println!("Order creation failed - {}", str)
                     }
                 }
@@ -53,13 +72,31 @@ pub async fn handle_order(
                 let cancel_order_result = engine.cancel_order(cancel_order);
 
                 match cancel_order_result {
-                    Ok(()) => {
+                    Ok(cancel_order_id) => {
+                        let cancel_order_json = serde_json::json!({
+                            "status": "Cancelled Order",
+                            "order_id": cancel_order_id,
+                        });
+
+                        let cancel_order_string =
+                            serde_json::to_string(&cancel_order_json).unwrap();
+
                         let _ = redis_connection
-                            .publish(pubsub_id_ref, String::from("Cancelled Order"))
+                            .publish(pubsub_id_ref, cancel_order_string)
                             .await;
                         println!("Successfully cancelled order!")
                     }
                     Err(str) => {
+                        let cancel_order_json = serde_json::json!({
+                            "status": "Failed to Cancel Order",
+                        });
+
+                        let cancel_order_string =
+                            serde_json::to_string(&cancel_order_json).unwrap();
+
+                        let _ = redis_connection
+                            .publish(pubsub_id_ref, cancel_order_string)
+                            .await;
                         println!("Order cancellation failed - {}", str)
                     }
                 }
@@ -71,11 +108,29 @@ pub async fn handle_order(
                 let pubsub_id_ref = pubsub_id.as_str();
 
                 let open_orders_vec = engine.get_open_orders(open_orders);
+                let open_orders_string = serde_json::to_string(&open_orders_vec).unwrap();
 
                 let _ = redis_connection
-                    .publish(pubsub_id_ref, String::from("Open Orders Retrieved"))
+                    .publish(pubsub_id_ref, open_orders_string)
                     .await;
-                println!("Successfully retrieved open orders! {:?}", open_orders_vec);
+                println!("Successfully retrieved open orders!");
+            }
+
+            OrderRequests::GetDepth(depth) => {
+                println!("Get Depth: {:?}", depth);
+                let pubsub_id = depth.pubsub_id.unwrap().to_string();
+                let pubsub_id_ref = pubsub_id.as_str();
+
+                let depth_result = engine.get_depth(depth);
+                let depth_json = serde_json::json!({
+                    "bids": depth_result.0,
+                    "asks": depth_result.1,
+                });
+
+                let depth_string = serde_json::to_string(&depth_json).unwrap();
+
+                let _ = redis_connection.publish(pubsub_id_ref, depth_string).await;
+                println!("Successfully retrieved depth!");
             }
         },
         Err(err) => {

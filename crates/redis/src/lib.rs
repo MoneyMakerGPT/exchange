@@ -80,7 +80,7 @@ impl RedisManager {
         key: String,
         value: String,
         channel: Uuid,
-    ) -> Result<(), Error> {
+    ) -> Result<String, Error> {
         self.push(key.as_str(), value).await.map_err(|e| {
             println!("Couldn't push into queue - {}", e);
             Error
@@ -96,12 +96,13 @@ impl RedisManager {
         let mut message_stream = self.subscriber.message_rx();
         if let Ok(message) = message_stream.recv().await {
             println!("Recv {:?} on channel {}", message.value, message.channel);
+            let published_message = message.value.convert::<String>().unwrap();
 
             let _ = self.unsubscribe(channel_ref).await;
-            return Ok(());
+            return Ok(published_message);
         }
 
-        Ok(())
+        Err(Error)
     }
 }
 
