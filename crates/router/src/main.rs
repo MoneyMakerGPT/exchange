@@ -1,3 +1,4 @@
+use actix_cors::Cors;
 use actix_web::{
     web::{self, scope},
     App, HttpResponse, HttpServer,
@@ -32,7 +33,7 @@ async fn main() -> std::io::Result<()> {
     });
 
     let server = HttpServer::new(move || {
-        App::new().service(
+        App::new().wrap(Cors::default().allow_any_origin()).service(
             scope("/api/v1")
                 .app_data(app_state.clone())
                 .service(web::scope("/health").route("", web::get().to(HttpResponse::Ok))) // GET /api/v1/ping
