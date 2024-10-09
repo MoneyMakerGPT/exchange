@@ -1,4 +1,5 @@
 use crate::types::{DbTrade, KlineData};
+use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use sqlx::{Pool, Postgres};
 
@@ -48,6 +49,16 @@ pub async fn get_trades_from_db(
         .collect();
 
     Ok(trades_vec)
+}
+
+fn parse_custom_date(date_str: &str) -> String {
+    // https://stackoverflow.com/questions/67774426/convert-postgres-timestamp-to-rust-chrono
+    let simplified_date_str = date_str.replace("+00:00:00", "+00:00"); // as %:z expects +00:00, not +00:00:00
+
+    let fixed_offset = DateTime::parse_from_str(&simplified_date_str, "%Y-%m-%d %H:%M:%S%.f %:z")
+        .expect("Failed to parse date with timezone");
+
+    fixed_offset.with_timezone(&Utc).to_string() // store as UTC, convert to relevant timezone on client side
 }
 
 pub async fn get_klines_timeseries_data(
@@ -112,16 +123,21 @@ pub async fn get_klines_timeseries_data(
     // Map the result set into a vector of KlineData structs
     let kline_data_vec: Vec<KlineData> = klines
         .iter()
-        .map(|kline| KlineData {
-            open: kline.open.clone().unwrap().to_string(),
-            high: kline.high.clone().unwrap().to_string(),
-            low: kline.low.clone().unwrap().to_string(),
-            close: kline.close.clone().unwrap().to_string(),
-            quote_volume: kline.quote_volume.clone().unwrap().to_string(),
-            start: kline.start.clone().unwrap().to_string(),
-            end: kline.end.clone().unwrap().to_string(),
-            trades: kline.trades.clone().unwrap().to_string(),
-            volume: kline.volume.clone().unwrap().to_string(),
+        .map(|kline| {
+            let start_time = parse_custom_date(kline.start.clone().unwrap().to_string().as_str());
+            let end_time = parse_custom_date(kline.end.clone().unwrap().to_string().as_str());
+
+            KlineData {
+                open: kline.open.clone().unwrap().to_string(),
+                high: kline.high.clone().unwrap().to_string(),
+                low: kline.low.clone().unwrap().to_string(),
+                close: kline.close.clone().unwrap().to_string(),
+                quote_volume: kline.quote_volume.clone().unwrap().to_string(),
+                start: start_time,
+                end: end_time,
+                trades: kline.trades.clone().unwrap().to_string(),
+                volume: kline.volume.clone().unwrap().to_string(),
+            }
         })
         .collect();
 
