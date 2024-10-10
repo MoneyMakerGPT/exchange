@@ -16,7 +16,7 @@ pub async fn get_trades(
 
     let pg_pool = app_state.postgres_db.get_pg_connection().unwrap();
 
-    let trades = get_trades_from_db(pg_pool, market_data.symbol)
+    let trades = get_trades_from_db(&pg_pool, market_data.symbol)
         .await
         .unwrap();
 

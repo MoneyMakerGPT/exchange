@@ -27,7 +27,7 @@ pub async fn get_klines(
     let pg_pool = app_state.postgres_db.get_pg_connection().unwrap();
 
     let klines = get_klines_timeseries_data(
-        pg_pool,
+        &pg_pool,
         klines_input.symbol,
         klines_input.interval,
         klines_input.start_time,

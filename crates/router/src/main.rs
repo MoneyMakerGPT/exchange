@@ -5,7 +5,7 @@ use actix_web::{
 };
 use confik::{Configuration as _, EnvSource};
 use dotenvy::dotenv;
-use routes::{depth, klines, order, trade, user};
+use routes::{depth, klines, order, trade, user, tickers};
 use sqlx_postgres::PostgresDb;
 
 pub mod config;
@@ -41,6 +41,7 @@ async fn main() -> std::io::Result<()> {
                 .service(web::scope("/depth").route("", web::get().to(depth::get_depth))) // // GET /api/v1/depth?symbol=BTC_USDT
                 .service(web::scope("/trades").route("", web::get().to(trade::get_trades))) // // GET /api/v1/trades?symbol=BTC_USDT
                 .service(web::scope("/klines").route("", web::get().to(klines::get_klines))) // // GET /api/v1/klines?symbol=BTC_USDT&interval=1m&startTime=1727022600
+                .service(web::scope("/tickers").route("", web::get().to(tickers::get_tickers))) // // GET /api/v1/klines?symbol=BTC_USDT&interval=1m&startTime=1727022600
                 .service(
                     web::scope("/orders")
                         .route("", web::post().to(order::execute_order)) // POST /orders

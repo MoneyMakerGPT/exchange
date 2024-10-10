@@ -1,5 +1,5 @@
-use crate::types::{DbTrade, KlineData};
-use chrono::{DateTime, Utc};
+use crate::types::{DbTrade, KlineData, TickerData};
+use chrono::{DateTime, Duration, Utc};
 use rust_decimal::Decimal;
 use sqlx::{Pool, Postgres};
 
@@ -24,14 +24,14 @@ pub async fn insert_trade(pool: &Pool<Postgres>, trade: DbTrade) -> Result<(), s
 }
 
 pub async fn get_trades_from_db(
-    pool: sqlx::Pool<sqlx::Postgres>,
+    pool: &Pool<Postgres>,
     market: String,
 ) -> Result<Vec<DbTrade>, sqlx::Error> {
     let trades = sqlx::query!(
         "SELECT * FROM trades WHERE market = $1 ORDER BY timestamp desc",
         market
     )
-    .fetch_all(&pool)
+    .fetch_all(pool)
     .await?;
 
     let trades_vec: Vec<DbTrade> = trades
@@ -62,7 +62,7 @@ fn parse_custom_date(date_str: &str) -> String {
 }
 
 pub async fn get_klines_timeseries_data(
-    pool: sqlx::Pool<sqlx::Postgres>,
+    pool: &Pool<Postgres>,
     market: String,
     interval: String,
     start_time: String,
@@ -117,7 +117,7 @@ pub async fn get_klines_timeseries_data(
         start_time_int,    // $2: start time for filtering trades
         market         // $3: the market identifier
     )
-    .fetch_all(&pool)
+    .fetch_all(pool)
     .await?;
 
     // Map the result set into a vector of KlineData structs
@@ -142,4 +142,74 @@ pub async fn get_klines_timeseries_data(
         .collect();
 
     Ok(kline_data_vec)
+}
+
+pub async fn get_tickers_from_db(pool: &Pool<Postgres>) -> Result<Vec<TickerData>, sqlx::Error> {
+    let now = Utc::now();
+    let start_time_24h_ago = now - Duration::hours(24);
+    let start_timestamp_24h_ago = start_time_24h_ago.timestamp_millis();
+
+    let tickers = sqlx::query!(
+        "
+        WITH aggregated_trades AS (
+            SELECT
+                market AS symbol,
+                MIN(price) FILTER (WHERE row_num_asc = 1) AS first_price,
+                MAX(price) AS high,
+                MIN(price) AS low,
+                MIN(price) FILTER (WHERE row_num_desc = 1) AS last_price,
+                MAX(price) FILTER (WHERE row_num_desc = 1) - MIN(price) FILTER (WHERE row_num_asc = 1) AS price_change,
+                (MAX(price) FILTER (WHERE row_num_desc = 1) - MIN(price) FILTER (WHERE row_num_asc = 1)) / MIN(price) FILTER (WHERE row_num_asc = 1) AS price_change_percent,
+                SUM(quantity) AS volume,
+                SUM(price * quantity) AS quote_volume,
+                COUNT(trade_id) AS trades
+            FROM (
+                SELECT
+                    market,
+                    price,
+                    quantity,
+                    trade_id,
+                    ROW_NUMBER() OVER (PARTITION BY market ORDER BY timestamp ASC) AS row_num_asc,
+                    ROW_NUMBER() OVER (PARTITION BY market ORDER BY timestamp DESC) AS row_num_desc
+                FROM trades
+                WHERE timestamp >= $1
+            ) trade_data
+            GROUP BY market
+        )
+        SELECT 
+            symbol, 
+            first_price, 
+            high, 
+            low, 
+            last_price, 
+            price_change, 
+            price_change_percent, 
+            quote_volume, 
+            trades, 
+            volume
+        FROM aggregated_trades
+        ORDER BY symbol ASC;
+        ",
+        start_timestamp_24h_ago
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let ticker_data: Vec<TickerData> = tickers
+        .iter()
+        .map(|row| TickerData {
+            symbol: row.symbol.clone().to_string(),
+            first_price: row.first_price.clone().unwrap().to_string(),
+            high: row.high.clone().unwrap().to_string(),
+            low: row.low.clone().unwrap().to_string(),
+            last_price: row.last_price.clone().unwrap().to_string(),
+            price_change: row.price_change.clone().unwrap().to_string(),
+            price_change_percent: row.price_change_percent.clone().unwrap().to_string(),
+            quote_volume: row.quote_volume.clone().unwrap().to_string(),
+            trades: row.trades.clone().unwrap().to_string(),
+            volume: row.volume.clone().unwrap().to_string(),
+        })
+        .collect();
+
+    Ok(ticker_data)
 }
