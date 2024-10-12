@@ -116,6 +116,45 @@ pub async fn handle_order(
                 println!("Successfully retrieved open orders!");
             }
 
+            OrderRequests::CancelAllOrders(cancel_all_orders) => {
+                println!("Cancel All Orders: {:?}", cancel_all_orders);
+                let user_id = cancel_all_orders.user_id.clone();
+                let pubsub_id = cancel_all_orders.pubsub_id.unwrap().to_string();
+                let pubsub_id_ref = pubsub_id.as_str();
+
+                let cancel_all_orders_result = engine.cancel_all_orders(cancel_all_orders);
+
+                match cancel_all_orders_result {
+                    Ok(_) => {
+                        let cancel_all_orders_json = serde_json::json!({
+                            "status": "Cancelled All Orders",
+                            "user_id": user_id,
+                        });
+
+                        let cancel_all_orders_string =
+                            serde_json::to_string(&cancel_all_orders_json).unwrap();
+
+                        let _ = redis_connection
+                            .publish(pubsub_id_ref, cancel_all_orders_string)
+                            .await;
+                        println!("Successfully cancelled all orders!")
+                    }
+                    Err(str) => {
+                        let cancel_all_orders_json = serde_json::json!({
+                            "status": "Failed to Cancel All Orders",
+                        });
+
+                        let cancel_all_orders_string =
+                            serde_json::to_string(&cancel_all_orders_json).unwrap();
+
+                        let _ = redis_connection
+                            .publish(pubsub_id_ref, cancel_all_orders_string)
+                            .await;
+                        println!("Order cancellation failed - {}", str)
+                    }
+                }
+            }
+
             OrderRequests::GetDepth(depth) => {
                 println!("Get Depth: {:?}", depth);
                 let pubsub_id = depth.pubsub_id.unwrap().to_string();

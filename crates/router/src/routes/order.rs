@@ -7,7 +7,7 @@ use uuid::Uuid;
 use crate::types::{
     app::AppState,
     routes::{
-        CancelOrderInput, CreateOrderInput, GetOpenOrdersInput, OrderRequests,
+        CancelAllOrdersInput, CancelOrderInput, CreateOrderInput, GetOpenOrdersInput, OrderRequests,
     },
 };
 
@@ -144,3 +144,45 @@ pub async fn get_open_orders(
     actix_web::HttpResponse::Ok().finish()
 }
 
+pub async fn cancel_all_orders(
+    body: Json<CancelAllOrdersInput>,
+    app_state: Data<AppState>,
+) -> actix_web::HttpResponse {
+    let starttime = Instant::now();
+    let mut order = body.into_inner();
+    let pubsub_id = Some(Uuid::new_v4());
+    order.pubsub_id = pubsub_id;
+
+    let cancel_all_orders_request = OrderRequests::CancelAllOrders(order);
+    let cancel_all_orders_data = to_string(&cancel_all_orders_request).unwrap();
+    println!("Cancel All Orders: {}", cancel_all_orders_data);
+
+    let redis_connection = &app_state.redis_connection;
+    if let Some(pubsub_id_value) = pubsub_id {
+        let result = redis_connection
+            .push_and_wait_for_subscriber(
+                RedisQueues::ORDERS.to_string(),
+                cancel_all_orders_data,
+                pubsub_id_value,
+            )
+            .await;
+
+        match result {
+            Ok(published_data) => {
+                let published_data_json: serde_json::Value =
+                    serde_json::from_str(&published_data).unwrap();
+
+                println!("Time: {:?}", starttime.elapsed());
+                return actix_web::HttpResponse::Ok().json(published_data_json);
+            }
+            Err(e) => {
+                println!("Failed to get all cancelled orders from redis - {}", e);
+                println!("Time: {:?}", starttime.elapsed());
+                return actix_web::HttpResponse::InternalServerError().finish();
+            }
+        }
+    }
+
+    println!("Timeout: {:?}", starttime.elapsed());
+    actix_web::HttpResponse::Ok().finish()
+}

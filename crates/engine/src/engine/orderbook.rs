@@ -159,6 +159,18 @@ impl OrderBook {
         }
     }
 
+    pub fn cancel_all_orders(&mut self, user_id: String) -> Vec<&Order> {
+        self.bids.values_mut().for_each(|orders| {
+            orders.retain(|order| order.user_id != user_id);
+        });
+
+        self.asks.values_mut().for_each(|orders| {
+            orders.retain(|order| order.user_id != user_id);
+        });
+
+        self.get_open_orders(user_id)
+    }
+
     pub fn get_depth(&self) -> (Vec<(Decimal, Decimal)>, Vec<(Decimal, Decimal)>) {
         let mut bids_depth: Vec<(Decimal, Decimal)> = Vec::new();
         let mut asks_depth: Vec<(Decimal, Decimal)> = Vec::new();

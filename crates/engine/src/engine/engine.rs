@@ -2,8 +2,8 @@ use crate::engine::db::DbUpdates;
 use crate::engine::orderbook::OrderBook;
 use crate::engine::ws_stream::WsStreamUpdates;
 use crate::types::engine::{
-    Asset, AssetPair, CancelOrder, CreateOrder, GetDepth, GetOpenOrders, Order, OrderSide,
-    OrderStatus, OrderType, ProcessOrderResult,
+    Asset, AssetPair, CancelAllOrders, CancelOrder, CreateOrder, GetDepth, GetOpenOrders, Order,
+    OrderSide, OrderStatus, OrderType, ProcessOrderResult,
 };
 use redis::RedisManager;
 use rust_decimal::Decimal;
@@ -237,6 +237,77 @@ impl Engine {
         let open_orders: Vec<&Order> = orderbook.get_open_orders(open_orders.user_id);
 
         open_orders
+    }
+
+    pub fn cancel_all_orders(
+        &mut self,
+        cancel_all_orders: CancelAllOrders,
+    ) -> Result<String, &str> {
+        let orderbook = self
+            .orderbooks
+            .iter_mut()
+            .find(|orderbook| orderbook.ticker() == cancel_all_orders.market)
+            .expect("No matching orderbook found!");
+
+        let assets: Vec<&str> = cancel_all_orders.market.split('_').collect();
+        let base_asset_str = assets[0];
+        let quote_asset_str = assets[1];
+        let base_asset = Asset::from_str(base_asset_str)?;
+        let quote_asset = Asset::from_str(quote_asset_str)?;
+
+        let open_orders = orderbook.cancel_all_orders(cancel_all_orders.user_id.clone());
+
+        let mut balance_updates: Vec<(String, Asset, Decimal, AmountType)> = Vec::new();
+
+        for order in open_orders {
+            let quantity = match order.side {
+                OrderSide::BUY => (order.quantity - order.filled_quantity) * order.price,
+                OrderSide::SELL => order.quantity - order.filled_quantity,
+            };
+
+            match order.side {
+                OrderSide::BUY => {
+                    balance_updates.push((
+                        order.user_id.clone(),
+                        quote_asset.clone(),
+                        quantity,
+                        AmountType::AVAILABLE,
+                    ));
+                    balance_updates.push((
+                        order.user_id.clone(),
+                        quote_asset.clone(),
+                        -quantity,
+                        AmountType::LOCKED,
+                    ));
+                }
+
+                OrderSide::SELL => {
+                    balance_updates.push((
+                        order.user_id.clone(),
+                        base_asset.clone(),
+                        quantity,
+                        AmountType::AVAILABLE,
+                    ));
+                    balance_updates.push((
+                        order.user_id.clone(),
+                        base_asset.clone(),
+                        -quantity,
+                        AmountType::LOCKED,
+                    ));
+                }
+            }
+        }
+
+        // Perform balance updates after the loop, ensuring only one mutable borrow of `self`
+        for (user_id, asset, amount, amount_type) in balance_updates {
+            self.update_balance_with_lock(user_id, asset, amount, amount_type)?;
+        }
+
+        // Return a success message after cancelling all orders
+        Ok(format!(
+            "All orders for user {} cancelled successfully",
+            cancel_all_orders.user_id
+        ))
     }
 
     pub fn get_depth(&self, depth: GetDepth) -> (Vec<(Decimal, Decimal)>, Vec<(Decimal, Decimal)>) {

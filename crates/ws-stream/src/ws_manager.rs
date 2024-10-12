@@ -101,7 +101,7 @@ impl WsManager {
         }
     }
 
-    // {"data":{"E":1727866324128584,"T":1727866324088922,"U":4977146,"a":[["1.0003","0"]],"b":[],"e":"depth","s":"USDT_USDT","u":4977146},"stream":"depth.USDT_USDT"}
+    // {"data":{"E":1727866324128584,"T":1727866324088922,"U":4977146,"a":[["1.0003","0"]],"b":[],"e":"depth","s":"BTC_USDT","u":4977146},"stream":"depth.BTC_USDT"}
     pub async fn send_to_ws_stream(&mut self, message: String) {
         let ws_message: WsResponse = serde_json::from_str(message.as_str()).unwrap();
 

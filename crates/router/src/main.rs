@@ -5,7 +5,7 @@ use actix_web::{
 };
 use confik::{Configuration as _, EnvSource};
 use dotenvy::dotenv;
-use routes::{depth, klines, order, trade, user, tickers};
+use routes::{depth, klines, order, tickers, trade, user};
 use sqlx_postgres::PostgresDb;
 
 pub mod config;
@@ -33,22 +33,34 @@ async fn main() -> std::io::Result<()> {
     });
 
     let server = HttpServer::new(move || {
-        App::new().wrap(Cors::default().allow_any_origin()).service(
-            scope("/api/v1")
-                .app_data(app_state.clone())
-                .service(web::scope("/health").route("", web::get().to(HttpResponse::Ok))) // GET /api/v1/ping
-                .service(web::scope("/users").route("", web::post().to(user::create_user))) // POST /api/v1/users
-                .service(web::scope("/depth").route("", web::get().to(depth::get_depth))) // // GET /api/v1/depth?symbol=BTC_USDT
-                .service(web::scope("/trades").route("", web::get().to(trade::get_trades))) // // GET /api/v1/trades?symbol=BTC_USDT
-                .service(web::scope("/klines").route("", web::get().to(klines::get_klines))) // // GET /api/v1/klines?symbol=BTC_USDT&interval=1m&startTime=1727022600
-                .service(web::scope("/tickers").route("", web::get().to(tickers::get_tickers))) // // GET /api/v1/klines?symbol=BTC_USDT&interval=1m&startTime=1727022600
-                .service(
-                    web::scope("/orders")
-                        .route("", web::post().to(order::execute_order)) // POST /orders
-                        .route("", web::delete().to(order::cancel_order)) // DELETE /orders
-                        .route("/open", web::get().to(order::get_open_orders)), // GET /orders/open
-                ),
-        )
+        App::new()
+            .wrap(
+                Cors::default()
+                    .allow_any_origin()
+                    .allow_any_header()
+                    .allow_any_method()
+                    .max_age(3600),
+            )
+            .service(
+                scope("/api/v1")
+                    .app_data(app_state.clone())
+                    .service(web::scope("/health").route("", web::get().to(HttpResponse::Ok))) // GET /ping
+                    .service(web::scope("/users").route("", web::post().to(user::create_user))) // POST /users
+                    .service(web::scope("/depth").route("", web::get().to(depth::get_depth))) // GET /depth?symbol=BTC_USDT
+                    .service(web::scope("/trades").route("", web::get().to(trade::get_trades))) // GET /trades?symbol=BTC_USDT
+                    .service(web::scope("/klines").route("", web::get().to(klines::get_klines))) // GET /klines?symbol=BTC_USDT&interval=1m&startTime=1727022600
+                    .service(web::scope("/tickers").route("", web::get().to(tickers::get_tickers))) // GET /klines?symbol=BTC_USDT&interval=1m&startTime=1727022600
+                    .service(
+                        web::scope("/order")
+                            .route("", web::post().to(order::execute_order)) // POST /order
+                            .route("", web::delete().to(order::cancel_order)), // DELETE /order
+                    )
+                    .service(
+                        web::scope("/orders")
+                            .route("", web::get().to(order::get_open_orders)) // GET /orders
+                            .route("", web::delete().to(order::cancel_all_orders)), // DELETE /orders
+                    ),
+            )
     })
     .bind(config.server_addr.clone())?
     .run();
