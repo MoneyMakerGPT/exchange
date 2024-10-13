@@ -64,6 +64,39 @@ pub async fn handle_order(
                 }
             }
 
+            OrderRequests::GetOpenOrder(open_order) => {
+                println!("Get Open Order: {:?}", open_order);
+                let pubsub_id = open_order.pubsub_id.unwrap().to_string();
+                let pubsub_id_ref = pubsub_id.as_str();
+
+                let open_order_result = engine.get_open_order(open_order);
+
+                match open_order_result {
+                    Ok(open_order) => {
+                        let open_order_json = serde_json::json!(open_order);
+
+                        let open_order_string = serde_json::to_string(&open_order_json).unwrap();
+
+                        let _ = redis_connection
+                            .publish(pubsub_id_ref, open_order_string)
+                            .await;
+                        println!("Successfully retrieved open order!")
+                    }
+                    Err(()) => {
+                        let open_order_json = serde_json::json!({
+                            "status": "Failed to Retrieve Open Order",
+                        });
+
+                        let open_order_string = serde_json::to_string(&open_order_json).unwrap();
+
+                        let _ = redis_connection
+                            .publish(pubsub_id_ref, open_order_string)
+                            .await;
+                        println!("Order retrieval failed")
+                    }
+                }
+            }
+
             OrderRequests::CancelOrder(cancel_order) => {
                 println!("Cancel Order: {:?}", cancel_order);
                 let pubsub_id = cancel_order.pubsub_id.unwrap().to_string();

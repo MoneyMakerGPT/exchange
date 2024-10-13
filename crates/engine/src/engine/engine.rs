@@ -2,8 +2,7 @@ use crate::engine::db::DbUpdates;
 use crate::engine::orderbook::OrderBook;
 use crate::engine::ws_stream::WsStreamUpdates;
 use crate::types::engine::{
-    Asset, AssetPair, CancelAllOrders, CancelOrder, CreateOrder, GetDepth, GetOpenOrders, Order,
-    OrderSide, OrderStatus, OrderType, ProcessOrderResult,
+    Asset, AssetPair, CancelAllOrders, CancelOrder, CreateOrder, GetDepth, GetOpenOrder, GetOpenOrders, Order, OrderSide, OrderStatus, OrderType, ProcessOrderResult
 };
 use redis::RedisManager;
 use rust_decimal::Decimal;
@@ -158,6 +157,18 @@ impl Engine {
             .await;
 
         Ok(order_id)
+    }
+
+    pub fn get_open_order(&mut self, open_order: GetOpenOrder) -> Result<&Order, ()> {
+        let orderbook = self
+            .orderbooks
+            .iter_mut()
+            .find(|orderbook| orderbook.ticker() == open_order.market)
+            .expect("No matching orderbook found!");
+
+        let open_order = orderbook.get_open_order(open_order.user_id, open_order.order_id);
+
+        open_order
     }
 
     pub fn cancel_order(&mut self, cancel_order: CancelOrder) -> Result<String, &str> {

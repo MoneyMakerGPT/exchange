@@ -52,6 +52,7 @@ async fn main() -> std::io::Result<()> {
                     .service(web::scope("/tickers").route("", web::get().to(tickers::get_tickers))) // GET /klines?symbol=BTC_USDT&interval=1m&startTime=1727022600
                     .service(
                         web::scope("/order")
+                            .route("", web::get().to(order::get_open_order)) // GET /order
                             .route("", web::post().to(order::execute_order)) // POST /order
                             .route("", web::delete().to(order::cancel_order)), // DELETE /order
                     )

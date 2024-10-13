@@ -89,6 +89,15 @@ pub struct CreateOrder {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GetOpenOrder {
+    pub user_id: String,
+    pub order_id: String,
+    pub market: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pubsub_id: Option<Uuid>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CancelOrder {
     pub order_id: String,
     pub user_id: String,
@@ -125,6 +134,7 @@ pub struct GetDepth {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum OrderRequests {
     CreateOrder(CreateOrder),
+    GetOpenOrder(GetOpenOrder),
     CancelOrder(CancelOrder),
     GetOpenOrders(GetOpenOrders),
     GetDepth(GetDepth),

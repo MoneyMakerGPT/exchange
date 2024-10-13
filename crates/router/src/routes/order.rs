@@ -7,7 +7,7 @@ use uuid::Uuid;
 use crate::types::{
     app::AppState,
     routes::{
-        CancelAllOrdersInput, CancelOrderInput, CreateOrderInput, GetOpenOrdersInput, OrderRequests,
+        CancelAllOrdersInput, CancelOrderInput, CreateOrderInput, GetOpenOrderInput, GetOpenOrdersInput, OrderRequests
     },
 };
 
@@ -54,6 +54,50 @@ pub async fn execute_order(
     }
 
     println!("Timeout: {:?}", starttime.elapsed());
+    actix_web::HttpResponse::Ok().finish()
+}
+
+pub async fn get_open_order(
+    body: Json<GetOpenOrderInput>,
+    app_state: Data<AppState>,
+) -> actix_web::HttpResponse {
+    let starttime = Instant::now();
+    let mut order = body.into_inner();
+    let pubsub_id = Some(Uuid::new_v4());
+    order.pubsub_id = pubsub_id;
+
+    let get_open_order_request = OrderRequests::GetOpenOrder(order);
+    let get_open_order_data = to_string(&get_open_order_request).unwrap();
+    println!("Get Open Order: {}", get_open_order_data);
+
+    let redis_connection = &app_state.redis_connection;
+    if let Some(pubsub_id_value) = pubsub_id {
+        let result = redis_connection
+            .push_and_wait_for_subscriber(
+                RedisQueues::ORDERS.to_string(),
+                get_open_order_data,
+                pubsub_id_value,
+            )
+            .await;
+
+        match result {
+            Ok(published_data) => {
+                let published_data_json: serde_json::Value =
+                    serde_json::from_str(&published_data).unwrap();
+
+                println!("Time: {:?}", starttime.elapsed());
+                return actix_web::HttpResponse::Ok().json(published_data_json);
+            }
+            Err(e) => {
+                println!("Failed to get open orders from redis - {}", e);
+                println!("Time: {:?}", starttime.elapsed());
+                return actix_web::HttpResponse::InternalServerError().finish();
+            }
+        }
+    }
+
+    println!("Timeout: {:?}", starttime.elapsed());
+
     actix_web::HttpResponse::Ok().finish()
 }
 

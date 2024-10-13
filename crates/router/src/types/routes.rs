@@ -20,6 +20,15 @@ pub struct CreateOrderInput {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GetOpenOrderInput {
+    user_id: String,
+    order_id: String,
+    market: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pubsub_id: Option<Uuid>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CancelOrderInput {
     order_id: String,
     user_id: String,
@@ -70,6 +79,7 @@ pub struct GetKlinesInput {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum OrderRequests {
     CreateOrder(CreateOrderInput),
+    GetOpenOrder(GetOpenOrderInput),
     CancelOrder(CancelOrderInput),
     GetOpenOrders(GetOpenOrdersInput),
     CancelAllOrders(CancelAllOrdersInput),

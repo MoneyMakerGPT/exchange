@@ -126,6 +126,20 @@ impl OrderBook {
         }
     }
 
+    pub fn get_open_order(&self, user_id: String, order_id: String) -> Result<&Order, ()> {
+        let order = self
+            .bids
+            .values()
+            .chain(self.asks.values()) // Combine bids and asks
+            .flat_map(|orders| orders.iter()) // Flatten the Vec<Order> for each price level
+            .find(|order| order.user_id == user_id && order.order_id == order_id);
+
+        match order {
+            Some(order) => Ok(order),
+            None => Err(()),
+        }
+    }
+
     pub fn get_open_orders(&mut self, user_id: String) -> Vec<&Order> {
         self.bids
             .values()
