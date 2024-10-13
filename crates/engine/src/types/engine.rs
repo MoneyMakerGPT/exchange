@@ -4,6 +4,7 @@ use uuid::Uuid;
 
 #[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq, Hash)]
 pub enum Asset {
+    USDC,
     USDT,
     BTC,
     ETH,
@@ -14,6 +15,7 @@ impl Asset {
     pub fn from_str(asset_str: &str) -> Result<Asset, &'static str> {
         // static lifetime because Err str slice is static
         match asset_str {
+            "USDC" => Ok(Asset::USDC),
             "USDT" => Ok(Asset::USDT),
             "BTC" => Ok(Asset::BTC),
             "ETH" => Ok(Asset::ETH),

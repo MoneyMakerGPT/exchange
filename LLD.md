@@ -60,7 +60,7 @@
      struct Order {
        order_id: String,
        user_id: String,
-       symbol: String,        // USDT_SOL
+       symbol: String,        // SOL_USDC
        side: String,          // Buy/Sell
        order_type: String,    // Limit/Market
        order_status: String,

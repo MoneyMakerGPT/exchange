@@ -18,6 +18,7 @@
 // impl Asset {
 //     pub fn from_str(asset_str: &str) -> Result<Asset, AssetError> {
 //         match asset_str {
+//             "USDC" => Ok(Asset::USDC),
 //             "USDT" => Ok(Asset::USDT),
 //             "BTC" => Ok(Asset::BTC),
 //             "ETH" => Ok(Asset::ETH),

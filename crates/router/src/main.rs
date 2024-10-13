@@ -46,10 +46,10 @@ async fn main() -> std::io::Result<()> {
                     .app_data(app_state.clone())
                     .service(web::scope("/health").route("", web::get().to(HttpResponse::Ok))) // GET /ping
                     .service(web::scope("/users").route("", web::post().to(user::create_user))) // POST /users
-                    .service(web::scope("/depth").route("", web::get().to(depth::get_depth))) // GET /depth?symbol=BTC_USDT
-                    .service(web::scope("/trades").route("", web::get().to(trade::get_trades))) // GET /trades?symbol=BTC_USDT
-                    .service(web::scope("/klines").route("", web::get().to(klines::get_klines))) // GET /klines?symbol=BTC_USDT&interval=1m&startTime=1727022600
-                    .service(web::scope("/tickers").route("", web::get().to(tickers::get_tickers))) // GET /klines?symbol=BTC_USDT&interval=1m&startTime=1727022600
+                    .service(web::scope("/depth").route("", web::get().to(depth::get_depth))) // GET /depth?symbol=SOL_USDC
+                    .service(web::scope("/trades").route("", web::get().to(trade::get_trades))) // GET /trades?symbol=SOL_USDC
+                    .service(web::scope("/klines").route("", web::get().to(klines::get_klines))) // GET /klines?symbol=SOL_USDC&interval=1m&startTime=1727022600
+                    .service(web::scope("/tickers").route("", web::get().to(tickers::get_tickers))) // GET /klines?symbol=SOL_USDC&interval=1m&startTime=1727022600
                     .service(
                         web::scope("/order")
                             .route("", web::get().to(order::get_open_order)) // GET /order

@@ -65,6 +65,8 @@ pub enum SupportedAssetPairs {
     ETH_USDT,
     #[allow(non_camel_case_types)]
     SOL_USDT,
+    #[allow(non_camel_case_types)]
+    SOL_USDC,
 }
 
 impl SupportedAssetPairs {
@@ -73,6 +75,7 @@ impl SupportedAssetPairs {
             "BTC_USDT" => Ok(SupportedAssetPairs::BTC_USDT),
             "ETH_USDT" => Ok(SupportedAssetPairs::ETH_USDT),
             "SOL_USDT" => Ok(SupportedAssetPairs::SOL_USDT),
+            "SOL_USDC" => Ok(SupportedAssetPairs::SOL_USDC),
             _ => Err("Unsupported asset pair"),
         }
     }

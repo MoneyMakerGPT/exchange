@@ -44,8 +44,8 @@ impl Engine {
 
     pub fn init_engine(&mut self) {
         let orderbook = OrderBook::new(AssetPair {
-            base: Asset::BTC,
-            quote: Asset::USDT,
+            base: Asset::SOL,
+            quote: Asset::USDC,
         });
 
         self.orderbooks.push(orderbook);
@@ -57,21 +57,21 @@ impl Engine {
             balance: HashMap::new(),
         };
 
-        // Add dummy values for USDT and BTC
-        let usdt_balance = Amount {
-            available: Decimal::new(1000, 2), // Dummy value: 1000 USDT (2 decimal places)
-            locked: Decimal::new(0, 2),       // 0 locked
+        // Add dummy values for USDC and SOL
+        let usdc_balance = Amount {
+            available: Decimal::new(100000, 0), // Dummy value: 100000 USDC
+            locked: Decimal::new(0, 0),         // 0 locked
         };
 
-        let btc_balance = Amount {
-            available: Decimal::new(2, 1), // Dummy value: 2 BTC (8 decimal places)
-            locked: Decimal::new(0, 1),    // 0 locked
+        let sol_balance = Amount {
+            available: Decimal::new(1000, 0), // Dummy value: 1000 SOL
+            locked: Decimal::new(0, 0),       // 0 locked
         };
 
         // Initialize the balance HashMap for the user
         let mut balances_map = initial_balances.balance;
-        balances_map.insert(Asset::USDT, usdt_balance);
-        balances_map.insert(Asset::BTC, btc_balance);
+        balances_map.insert(Asset::USDC, usdc_balance);
+        balances_map.insert(Asset::SOL, sol_balance);
 
         // Add the initialized UserBalances to the Engine's balances map
         self.balances.insert(
