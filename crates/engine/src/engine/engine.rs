@@ -142,6 +142,7 @@ impl Engine {
                 input_order.market.clone(),
                 input_order.user_id.clone(),
                 &order_result.fills,
+                order.timestamp,
                 redis_conn,
             )
             .await;

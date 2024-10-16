@@ -14,6 +14,7 @@ pub trait WsStreamUpdates {
         market: String,
         user_id: String,
         fills: &Vec<Fill>,
+        timestamp: i64,
         redis_conn: &RedisManager,
     );
 
@@ -34,6 +35,7 @@ impl WsStreamUpdates for Engine {
         market: String,
         user_id: String,
         fills: &Vec<Fill>,
+        timestamp: i64,
         redis_conn: &RedisManager,
     ) {
         for fill in fills.iter() {
@@ -45,6 +47,7 @@ impl WsStreamUpdates for Engine {
                 "p": fill.price,
                 "q": fill.quantity,
                 "s": market,
+                "T": timestamp,
             });
 
             let ws_response = WsResponse {
