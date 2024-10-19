@@ -2,7 +2,8 @@ use crate::engine::db::DbUpdates;
 use crate::engine::orderbook::OrderBook;
 use crate::engine::ws_stream::WsStreamUpdates;
 use crate::types::engine::{
-    Asset, AssetPair, CancelAllOrders, CancelOrder, CreateOrder, GetDepth, GetOpenOrder, GetOpenOrders, Order, OrderSide, OrderStatus, OrderType, ProcessOrderResult
+    Asset, AssetPair, CancelAllOrders, CancelOrder, CreateOrder, GetDepth, GetOpenOrder,
+    GetOpenOrders, Order, OrderSide, OrderStatus, OrderType, ProcessOrderResult,
 };
 use redis::RedisManager;
 use rust_decimal::Decimal;
@@ -44,7 +45,7 @@ impl Engine {
 
     pub fn init_engine(&mut self) {
         let orderbook = OrderBook::new(AssetPair {
-            base: Asset::SOL,
+            base: Asset::JOG,
             quote: Asset::USDC,
         });
 
@@ -57,21 +58,21 @@ impl Engine {
             balance: HashMap::new(),
         };
 
-        // Add dummy values for USDC and SOL
+        // Add dummy values for USDC and JOG
         let usdc_balance = Amount {
-            available: Decimal::new(100000, 0), // Dummy value: 100000 USDC
-            locked: Decimal::new(0, 0),         // 0 locked
+            available: Decimal::new(1000000, 0), // Dummy value: 1000000 USDC
+            locked: Decimal::new(0, 0),          // 0 locked
         };
 
-        let sol_balance = Amount {
-            available: Decimal::new(1000, 0), // Dummy value: 1000 SOL
-            locked: Decimal::new(0, 0),       // 0 locked
+        let jog_balance = Amount {
+            available: Decimal::new(10000, 0), // Dummy value: 10000 JOG
+            locked: Decimal::new(0, 0),        // 0 locked
         };
 
         // Initialize the balance HashMap for the user
         let mut balances_map = initial_balances.balance;
         balances_map.insert(Asset::USDC, usdc_balance);
-        balances_map.insert(Asset::SOL, sol_balance);
+        balances_map.insert(Asset::JOG, jog_balance);
 
         // Add the initialized UserBalances to the Engine's balances map
         self.balances.insert(
