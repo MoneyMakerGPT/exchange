@@ -28,7 +28,7 @@ pub async fn get_trades_from_db(
     market: String,
 ) -> Result<Vec<DbTrade>, sqlx::Error> {
     let trades = sqlx::query!(
-        "SELECT * FROM trades WHERE market = $1 ORDER BY timestamp desc",
+        "SELECT * FROM trades WHERE market = $1 ORDER BY timestamp desc LIMIT 100",
         market
     )
     .fetch_all(pool)
@@ -212,4 +212,20 @@ pub async fn get_tickers_from_db(pool: &Pool<Postgres>) -> Result<Vec<TickerData
         .collect();
 
     Ok(ticker_data)
+}
+
+pub async fn get_latest_trade_id_from_db(
+    pool: &Pool<Postgres>,
+    market: String,
+) -> Result<i64, sqlx::Error> {
+    let latest_trade = sqlx::query!(
+        "SELECT trade_id FROM trades WHERE market = $1 ORDER BY trade_id desc LIMIT 1",
+        market
+    )
+    .fetch_one(pool)
+    .await?;
+
+    let trade_id = latest_trade.trade_id;
+
+    Ok(trade_id)
 }

@@ -15,12 +15,12 @@ pub struct OrderBook {
 }
 
 impl OrderBook {
-    pub fn new(asset_pair: AssetPair) -> OrderBook {
+    pub fn new(asset_pair: AssetPair, trade_id: i64) -> OrderBook {
         OrderBook {
             asks: BTreeMap::new(),
             bids: BTreeMap::new(),
             asset_pair,
-            trade_id: 0,
+            trade_id,
             last_update_id: 0,
         }
     }

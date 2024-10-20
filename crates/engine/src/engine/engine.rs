@@ -5,10 +5,12 @@ use crate::types::engine::{
     Asset, AssetPair, CancelAllOrders, CancelOrder, CreateOrder, GetDepth, GetOpenOrder,
     GetOpenOrders, Order, OrderSide, OrderStatus, OrderType, ProcessOrderResult,
 };
+use db_processor::query::get_latest_trade_id_from_db;
 use redis::RedisManager;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
+use sqlx::{Pool, Postgres};
 use std::collections::HashMap;
 use std::sync::Mutex;
 
@@ -43,11 +45,17 @@ impl Engine {
         }
     }
 
-    pub fn init_engine(&mut self) {
-        let orderbook = OrderBook::new(AssetPair {
-            base: Asset::JOG,
-            quote: Asset::USDC,
-        });
+    pub async fn init_engine(&mut self, pool: &Pool<Postgres>) {
+        let market = "JOG_USDC".to_string();
+        let trade_id: i64 = get_latest_trade_id_from_db(pool, market).await.unwrap();
+
+        let orderbook = OrderBook::new(
+            AssetPair {
+                base: Asset::JOG,
+                quote: Asset::USDC,
+            },
+            trade_id + 1,
+        );
 
         self.orderbooks.push(orderbook);
     }

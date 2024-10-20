@@ -6,6 +6,7 @@ pub mod user;
 use engine::engine::Engine;
 use order::handle_order;
 use redis::{RedisManager, RedisQueues};
+use sqlx_postgres::PostgresDb;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::task;
@@ -16,9 +17,13 @@ async fn main() {
     let redis_connection = Arc::new(RedisManager::new().await.unwrap());
     println!("Redis connected!");
 
+    let postgres = PostgresDb::new().await.unwrap();
+    let pg_pool = postgres.get_pg_connection().unwrap();
+    println!("Postgres connection pool ready!");
+
     // Use Arc and Mutex to safely share engine across tasks
     let engine = Arc::new(Mutex::new(Engine::new()));
-    engine.lock().await.init_engine();
+    engine.lock().await.init_engine(&pg_pool).await;
     engine.lock().await.init_user_balance("test_user");
 
     // Spawn a task to handle orders concurrently
