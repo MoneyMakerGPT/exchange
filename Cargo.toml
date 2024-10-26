@@ -12,6 +12,7 @@ dotenvy = "0.15"
 env_logger = "0.10.0"
 fred = { version = "9.2.1", features = ["subscriber-client"] }
 futures-util = "0.3.30"
+rand = "0.8.5"
 redis = { version = "0.25", features = ["tokio-comp", "connection-manager"] }
 rust_decimal = "1.36.0"
 rust_decimal_macros = "1.36.0"

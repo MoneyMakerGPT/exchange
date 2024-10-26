@@ -718,6 +718,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "fred",
+ "rand",
  "redis",
  "rust_decimal",
  "rust_decimal_macros",
@@ -726,6 +727,7 @@ dependencies = [
  "sqlx",
  "sqlx_postgres",
  "tokio",
+ "uuid",
 ]
 
 [[package]]
