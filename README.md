@@ -1,12 +1,14 @@
-<h1 align="center">Exchange ⚡</h1>
+<h1 align="center">Exchange⚡</h1>
 
 <p align="center">
     🚀 A high-performance centralized cryptocurrency exchange built in Rust.
     <br /> <br />
     <a href="#introduction"><strong>Introduction</strong></a> ·
+    <a href="#architecture"><strong>Architecture</strong></a> ·
+    <a href="#user-interface"><strong>User Interface</strong></a> ·
     <a href="#features"><strong>Features</strong></a> ·
     <a href="#tech-stack"><strong>Tech Stack</strong></a> ·
-    <a href="#architecture"><strong>Architecture</strong></a> ·
+    <a href="#api-endpoints"><strong>API Endpoints</strong></a> ·
     <a href="#order-matching--execution"><strong>Order Matching & Execution</strong></a> ·
     <a href="#contributing"><strong>Contributing</strong></a> ·
     <a href="#local-development"><strong>Local Development</strong></a> ·
