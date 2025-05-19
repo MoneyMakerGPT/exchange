@@ -15,6 +15,24 @@ impl PostgresDb {
 
         println!("Connected to Postgres - {}", db_url);
 
+        // Run the table creation query if it doesn't exist
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS trades (
+                trade_id BIGINT PRIMARY KEY,
+                market VARCHAR NOT NULL,
+                price NUMERIC NOT NULL,
+                quantity NUMERIC NOT NULL,
+                user_id VARCHAR NOT NULL,
+                other_user_id VARCHAR NOT NULL,
+                order_id VARCHAR NOT NULL,
+                timestamp BIGINT NOT NULL
+            );
+            "#
+        )
+        .execute(&pool)
+        .await?;
+
         Ok(Self { pool })
     }
 

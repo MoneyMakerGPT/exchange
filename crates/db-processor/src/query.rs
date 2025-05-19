@@ -222,10 +222,13 @@ pub async fn get_latest_trade_id_from_db(
         "SELECT trade_id FROM trades WHERE market = $1 ORDER BY trade_id desc LIMIT 1",
         market
     )
-    .fetch_one(pool)
+    .fetch_optional(pool)
     .await?;
 
-    let trade_id = latest_trade.trade_id;
+    let trade_id = match latest_trade {
+        Some(record) => record.trade_id,
+        None => 0, // no trades found, so start from 0 (will increment to 1)
+    };
 
     Ok(trade_id)
 }
