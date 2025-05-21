@@ -34,7 +34,7 @@ Exchange is a low-latency centralized cryptocurrency exchange designed for high-
 - Github Repository - [Exchange-Web](https://github.com/jogeshwar01/exchange-web)
 - Design Reference - [Drift Labs](https://app.drift.trade/)
 
-![Exchange Architecture](assets/exchange-web.png)
+![User Interface](assets/exchange-web.png)
 
 ## Features
 
