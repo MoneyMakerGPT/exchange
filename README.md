@@ -179,6 +179,14 @@ docker-compose up -d
 cargo run
 ```
 
+## Deployment
+
+- Production deployment is handled by [GitHub Actions](https://github.com/jogeshwar01/exchange/actions/workflows/production.yml).
+- Add the following secrets to your GitHub repository:
+  - `DOCKER_USERNAME`
+  - `DOCKER_PASSWORD`
+  - `PAT` (Personal Access Token with `repo` scope)
+
 ## License
 
 The exchange is open-source under the MIT License. You can [find it here](https://github.com/jogeshwar01/exchange/blob/main/LICENSE.md).

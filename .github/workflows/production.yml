@@ -52,3 +52,21 @@ jobs:
           file: docker/Dockerfile.engine
           push: true
           tags: jogeshwar01/exchange-engine:${{ github.sha }}
+
+      - name: Clone exchange-ops repo, update image tags, and push tags
+        env:
+          PAT: ${{ secrets.PAT }}
+        run: |
+          git clone https://github.com/jogeshwar01/exchange-ops.git
+          cd exchange-ops
+
+          sed -i 's|image: jogeshwar01/exchange-router:.*|image: jogeshwar01/exchange-router:${{ github.sha }}|' backend/deployment.yml
+          sed -i 's|image: jogeshwar01/exchange-ws-stream:.*|image: jogeshwar01/exchange-ws-stream:${{ github.sha }}|' websocket/deployment.yml
+          sed -i 's|image: jogeshwar01/exchange-db-processor:.*|image: jogeshwar01/exchange-db-processor:${{ github.sha }}|' db-processor/deployment.yml
+          sed -i 's|image: jogeshwar01/exchange-engine:.*|image: jogeshwar01/exchange-engine:${{ github.sha }}|' engine/deployment.yml
+
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "deploy: update exchange image tags to ${{ github.sha }}"
+          git push https://${PAT}@github.com/jogeshwar01/exchange-ops.git main
