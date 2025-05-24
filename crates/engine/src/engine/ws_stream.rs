@@ -74,11 +74,17 @@ impl WsStreamUpdates for Engine {
         fills: &Vec<Fill>,
         redis_conn: &RedisManager,
     ) {
-        let orderbook = self
+        let orderbook = match self
             .orderbooks
             .iter_mut()
             .find(|orderbook| orderbook.ticker() == market)
-            .expect("No matching orderbook found!");
+        {
+            Some(ob) => ob,
+            None => {
+                eprintln!("No matching orderbook found for market: {}", market);
+                return;
+            }
+        };
 
         let depth = orderbook.get_depth();
         let depth_bids = depth.0;

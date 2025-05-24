@@ -97,14 +97,26 @@ impl Engine {
         input_order: CreateOrder,
         redis_conn: &RedisManager,
     ) -> Result<String, &str> {
-        self.check_and_lock_funds(&input_order)
-            .expect("Funds check failed");
+        let funds_check = self.check_and_lock_funds(&input_order);
 
-        let orderbook = self
+        if funds_check.is_err() {
+            return Err("Funds check failed");
+        }
+
+        let orderbook = match self
             .orderbooks
             .iter_mut()
             .find(|orderbook| orderbook.ticker() == input_order.market)
-            .expect("No matching orderbook found!");
+        {
+            Some(ob) => ob,
+            None => {
+                eprintln!(
+                    "No matching orderbook found for market: {}",
+                    input_order.market
+                );
+                return Err("No matching orderbook found");
+            }
+        };
 
         let assets: Vec<&str> = input_order.market.split('_').collect();
         let base_asset = Asset::from_str(assets[0]).unwrap();
@@ -170,11 +182,20 @@ impl Engine {
     }
 
     pub fn get_open_order(&mut self, open_order: GetOpenOrder) -> Result<&Order, ()> {
-        let orderbook = self
+        let orderbook = match self
             .orderbooks
             .iter_mut()
             .find(|orderbook| orderbook.ticker() == open_order.market)
-            .expect("No matching orderbook found!");
+        {
+            Some(ob) => ob,
+            None => {
+                eprintln!(
+                    "No matching orderbook found for market: {}",
+                    open_order.market
+                );
+                return Err(());
+            }
+        };
 
         let open_order = orderbook.get_open_order(open_order.user_id, open_order.order_id);
 
@@ -182,11 +203,20 @@ impl Engine {
     }
 
     pub fn cancel_order(&mut self, cancel_order: CancelOrder) -> Result<String, &str> {
-        let orderbook = self
+        let orderbook = match self
             .orderbooks
             .iter_mut()
             .find(|orderbook| orderbook.ticker() == cancel_order.market)
-            .expect("No matching orderbook found!");
+        {
+            Some(ob) => ob,
+            None => {
+                eprintln!(
+                    "No matching orderbook found for market: {}",
+                    cancel_order.market
+                );
+                return Err("No matching orderbook found");
+            }
+        };
 
         let assets: Vec<&str> = cancel_order.market.split('_').collect();
         let base_asset_str = assets[0];
@@ -249,11 +279,20 @@ impl Engine {
     }
 
     pub fn get_open_orders(&mut self, open_orders: GetOpenOrders) -> Vec<&Order> {
-        let orderbook = self
+        let orderbook = match self
             .orderbooks
             .iter_mut()
             .find(|orderbook| orderbook.ticker() == open_orders.market)
-            .expect("No matching orderbook found!");
+        {
+            Some(ob) => ob,
+            None => {
+                eprintln!(
+                    "No matching orderbook found for market: {}",
+                    open_orders.market
+                );
+                return Vec::new();
+            }
+        };
 
         let open_orders: Vec<&Order> = orderbook.get_open_orders(open_orders.user_id);
 
@@ -264,11 +303,20 @@ impl Engine {
         &mut self,
         cancel_all_orders: CancelAllOrders,
     ) -> Result<String, &str> {
-        let orderbook = self
+        let orderbook = match self
             .orderbooks
             .iter_mut()
             .find(|orderbook| orderbook.ticker() == cancel_all_orders.market)
-            .expect("No matching orderbook found!");
+        {
+            Some(ob) => ob,
+            None => {
+                eprintln!(
+                    "No matching orderbook found for market: {}",
+                    cancel_all_orders.market
+                );
+                return Err("No matching orderbook found");
+            }
+        };
 
         let assets: Vec<&str> = cancel_all_orders.market.split('_').collect();
         let base_asset_str = assets[0];
@@ -332,11 +380,17 @@ impl Engine {
     }
 
     pub fn get_depth(&self, depth: GetDepth) -> (Vec<(Decimal, Decimal)>, Vec<(Decimal, Decimal)>) {
-        let orderbook = self
+        let orderbook = match self
             .orderbooks
             .iter()
             .find(|orderbook| orderbook.ticker() == depth.symbol)
-            .expect("No matching orderbook found!");
+        {
+            Some(ob) => ob,
+            None => {
+                eprintln!("No matching orderbook found for market: {}", depth.symbol);
+                return (Vec::new(), Vec::new());
+            }
+        };
 
         let depth = orderbook.get_depth();
 
