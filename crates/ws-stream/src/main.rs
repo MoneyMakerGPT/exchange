@@ -5,6 +5,7 @@ use std::{sync::Arc, thread};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Mutex; // need to use this instead of std::sync::Mutex because we are in an async context
 use types::WsMessage;
+use tokio_tungstenite::tungstenite::Error as WsError;
 
 pub mod types;
 pub mod user;
@@ -61,25 +62,41 @@ async fn accept_connection(stream: TcpStream, ws_manager: Arc<Mutex<WsManager>>)
 
     println!("Connection established with addr: {}", user_addr);
 
-    while let Some(msg) = read.next().await {
-        let msg = msg.unwrap();
-
-        if msg.is_text() {
-            let msg = msg.to_text().unwrap();
-
-            if let Ok(data) = serde_json::from_str::<WsMessage>(&msg) {
-                process_data(
-                    data,
-                    user_addr.clone().to_string().as_str(),
-                    ws_manager.clone(),
-                )
-                .await;
+    while let Some(msg_result) = read.next().await {
+        match msg_result {
+            Ok(msg) => {
+                if msg.is_text() {
+                    let msg_text = msg.to_text().unwrap(); // still unwrap here because you control msg type
+                    if let Ok(data) = serde_json::from_str::<WsMessage>(msg_text) {
+                        process_data(data, &user_addr.to_string(), ws_manager.clone()).await;
+                    }
+                } else if msg.is_close() {
+                    println!("Closing Connection to user with addr: {}", user_addr);
+                    let mut manager = ws_manager.lock().await;
+                    manager.remove_user(&user_addr.to_string());
+                    break;
+                }
             }
-        } else if msg.is_close() {
-            println!("Closing Connection to user with addr: {}", user_addr);
-            // Remove user when connection is closed
-            let mut manager = ws_manager.lock().await;
-            manager.remove_user(user_addr.to_string().as_str());
+            Err(e) => {
+                match e {
+                    WsError::Protocol(protocol_err) => {
+                        println!(
+                            "WebSocket protocol error from {}: {:?}",
+                            user_addr, protocol_err
+                        );
+                    }
+                    WsError::ConnectionClosed | WsError::AlreadyClosed => {
+                        println!("WebSocket connection closed from {}: {:?}", user_addr, e);
+                    }
+                    _ => {
+                        println!("WebSocket error from {}: {:?}", user_addr, e);
+                    }
+                }
+                // Remove user and break the loop on error
+                let mut manager = ws_manager.lock().await;
+                manager.remove_user(&user_addr.to_string());
+                break;
+            }
         }
     }
 }
