@@ -81,19 +81,23 @@ impl RedisManager {
         value: String,
         channel: Uuid,
     ) -> Result<String, Error> {
-        self.push(key.as_str(), value).await.map_err(|e| {
-            println!("Couldn't push into queue - {}", e);
-            Error
-        })?;
-
         let channel = channel.to_string();
         let channel_ref = channel.as_str();
+
+        // Subscribe first
         self.subscribe(channel_ref).await.map_err(|e| {
             println!("Failed to subscribe to channel - {}", e);
             Error
         })?;
 
+        // Then push message
+        self.push(key.as_str(), value).await.map_err(|e| {
+            println!("Couldn't push into queue - {}", e);
+            Error
+        })?;
+
         let mut message_stream = self.subscriber.message_rx();
+
         if let Ok(message) = message_stream.recv().await {
             println!("Recv {:?} on channel {}", message.value, message.channel);
             let published_message = message.value.convert::<String>().unwrap();
