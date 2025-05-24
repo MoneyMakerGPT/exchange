@@ -38,7 +38,7 @@ pub async fn generate_random_trades(pool: &PgPool, num_trades: i32) -> Result<()
             .round_dp(2);
 
         // Generate other trade details
-        let market = "JOG_USDC".to_string();
+        let market = "SOL_USDC".to_string();
         let user_id = "test_user".to_string();
         let other_user_id = "test_user".to_string();
         let order_id = Uuid::new_v4().to_string();

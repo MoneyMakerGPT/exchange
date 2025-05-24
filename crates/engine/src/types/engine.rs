@@ -9,7 +9,6 @@ pub enum Asset {
     BTC,
     ETH,
     SOL,
-    JOG,
 }
 
 impl Asset {
@@ -21,7 +20,6 @@ impl Asset {
             "BTC" => Ok(Asset::BTC),
             "ETH" => Ok(Asset::ETH),
             "SOL" => Ok(Asset::SOL),
-            "JOG" => Ok(Asset::JOG),
             _ => Err("Unsupported asset"),
         }
     }

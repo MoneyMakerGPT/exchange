@@ -17,7 +17,7 @@ generate_order_data() {
   # Create JSON data for the order
   ORDER_DATA=$(cat <<EOF
 {
-  "market": "JOG_USDC",
+  "market": "SOL_USDC",
   "side": "$SIDE",
   "quantity": $QUANTITY,
   "price": $PRICE,

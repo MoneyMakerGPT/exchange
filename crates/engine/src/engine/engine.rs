@@ -46,12 +46,12 @@ impl Engine {
     }
 
     pub async fn init_engine(&mut self, pool: &Pool<Postgres>) {
-        let market = "JOG_USDC".to_string();
+        let market = "SOL_USDC".to_string();
         let trade_id: i64 = get_latest_trade_id_from_db(pool, market).await.unwrap();
 
         let orderbook = OrderBook::new(
             AssetPair {
-                base: Asset::JOG,
+                base: Asset::SOL,
                 quote: Asset::USDC,
             },
             trade_id + 1,
@@ -66,21 +66,21 @@ impl Engine {
             balance: HashMap::new(),
         };
 
-        // Add dummy values for USDC and JOG
+        // Add dummy values for USDC and SOL
         let usdc_balance = Amount {
             available: Decimal::new(1000000, 0), // Dummy value: 1000000 USDC
             locked: Decimal::new(0, 0),          // 0 locked
         };
 
-        let jog_balance = Amount {
-            available: Decimal::new(10000, 0), // Dummy value: 10000 JOG
+        let sol_balance = Amount {
+            available: Decimal::new(10000, 0), // Dummy value: 10000 SOL
             locked: Decimal::new(0, 0),        // 0 locked
         };
 
         // Initialize the balance HashMap for the user
         let mut balances_map = initial_balances.balance;
         balances_map.insert(Asset::USDC, usdc_balance);
-        balances_map.insert(Asset::JOG, jog_balance);
+        balances_map.insert(Asset::SOL, sol_balance);
 
         // Add the initialized UserBalances to the Engine's balances map
         self.balances.insert(
